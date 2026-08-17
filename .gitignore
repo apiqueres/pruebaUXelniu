@@ -1,44 +1,25 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# La maqueta estatica original vive en su propio repositorio (apiqueres/elniu).
+# Tenerla aqui dentro como copia de trabajo es comodo, pero no forma parte de
+# este proyecto y git la trataria como un submodulo.
+/elniu/
 
-# Compiled output
-/dist
-/tmp
-/out-tsc
-/bazel-out
+# Dependencias y compilados
+node_modules/
+dist/
+target/
+.angular/
 
-# Node
-/node_modules
-npm-debug.log
-yarn-error.log
+# La base de datos local de pruebas del backend: lleva reservas con nombres,
+# telefonos y correos de personas. Nunca al repositorio.
+elniu-api/datos/
 
-# IDEs and editors
+# Entornos y secretos: las claves de correo y de la base de datos van en
+# variables de entorno del servidor, jamas en un fichero versionado.
+.env
+*.env
+
+# Editores y sistema
 .idea/
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/mcp.json
-.history/*
-
-# Miscellaneous
-/.angular/cache
-.sass-cache/
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
-__screenshots__/
-
-# System files
+*.iml
 .DS_Store
 Thumbs.db

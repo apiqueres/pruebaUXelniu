@@ -19,61 +19,61 @@ type Pestana = 'reservas' | 'productos' | 'menus' | 'categorias';
     @if (!identificado()) {
       <niu-login />
     } @else {
-    <div class="admin">
-      <header class="barra-admin">
-        <div class="barra-admin__marca">
-          <a routerLink="/" class="volver" aria-label="Volver a la web">&#8592;</a>
-          <div>
-            <span class="titulo">Administración</span>
-            <span class="sub etiqueta">{{ restaurante().nombre }}</span>
+      <div class="admin">
+        <header class="barra-admin">
+          <div class="barra-admin__marca">
+            <a routerLink="/" class="volver" aria-label="Volver a la web">&#8592;</a>
+            <div>
+              <span class="titulo">Administración</span>
+              <span class="sub etiqueta">{{ restaurante().nombre }}</span>
+            </div>
           </div>
-        </div>
 
-        <nav class="pestanas" aria-label="Secciones de administración">
-          @for (p of pestanas; track p.id) {
-            <button
-              type="button"
-              class="pestana"
-              [class.pestana--activa]="pestana() === p.id"
-              (click)="pestana.set(p.id)"
-            >
-              {{ p.etiqueta }}
-              <!-- Las peticiones sin resolver se cantan desde la pestaña, para
+          <nav class="pestanas" aria-label="Secciones de administración">
+            @for (p of pestanas; track p.id) {
+              <button
+                type="button"
+                class="pestana"
+                [class.pestana--activa]="pestana() === p.id"
+                (click)="pestana.set(p.id)"
+              >
+                {{ p.etiqueta }}
+                <!-- Las peticiones sin resolver se cantan desde la pestaña, para
                    que no haga falta entrar a mirar si hay algo esperando. -->
-              @if (p.id === 'reservas' && pendientes().length) {
-                <span class="aviso">{{ pendientes().length }}</span>
-              }
-            </button>
-          }
-        </nav>
+                @if (p.id === 'reservas' && pendientes().length) {
+                  <span class="aviso">{{ pendientes().length }}</span>
+                }
+              </button>
+            }
+          </nav>
 
-        <button type="button" class="boton boton--linea restaurar" (click)="salir()">
-          Salir
-        </button>
-      </header>
+          <button type="button" class="boton boton--linea restaurar" (click)="salir()">
+            Salir
+          </button>
+        </header>
 
-      <p class="apunte">
-        Conectado como <strong>{{ usuario() }}</strong
-        >. Los cambios se guardan en el servidor y se ven al momento en la web.
-      </p>
+        <p class="apunte">
+          Conectado como <strong>{{ usuario() }}</strong
+          >. Los cambios se guardan en el servidor y se ven al momento en la web.
+        </p>
 
-      <main class="lienzo">
-        @switch (pestana()) {
-          @case ('reservas') {
-            <niu-admin-reservas />
+        <main class="lienzo">
+          @switch (pestana()) {
+            @case ('reservas') {
+              <niu-admin-reservas />
+            }
+            @case ('productos') {
+              <niu-admin-productos />
+            }
+            @case ('menus') {
+              <niu-admin-menus />
+            }
+            @case ('categorias') {
+              <niu-admin-categorias />
+            }
           }
-          @case ('productos') {
-            <niu-admin-productos />
-          }
-          @case ('menus') {
-            <niu-admin-menus />
-          }
-          @case ('categorias') {
-            <niu-admin-categorias />
-          }
-        }
-      </main>
-    </div>
+        </main>
+      </div>
     }
   `,
   styles: `

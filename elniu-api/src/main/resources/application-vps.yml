@@ -1,0 +1,30 @@
+# Perfil del servidor: arrancar con --spring.profiles.active=vps
+#
+# Todo sale de variables de entorno, para que no haya ninguna credencial
+# escrita en el repositorio.
+
+spring:
+  datasource:
+    url: ${ELNIU_BD_URL:jdbc:postgresql://localhost:5432/elniu}
+    driver-class-name: org.postgresql.Driver
+    username: ${ELNIU_BD_USUARIO}
+    password: ${ELNIU_BD_CLAVE}
+
+  jpa:
+    hibernate:
+      # Pasalo a «validate» en cuanto el esquema este estable, para que un
+      # despliegue no pueda alterar las tablas sin querer.
+      ddl-auto: ${ELNIU_BD_ESQUEMA:update}
+    open-in-view: false
+
+  h2:
+    console:
+      enabled: false
+
+elniu:
+  cors:
+    origenes: ${ELNIU_CORS_ORIGENES:https://apiqueres.github.io}
+
+logging:
+  level:
+    es.elniu.api: INFO

@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "elniu-angular",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "@angular/cli@21", "serve", "--port", "4300"],
+      "cwd": "elniu-app",
+      "port": 4300
+    },
+    {
+      "name": "elniu-estatica",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "elniu"],
+      "port": 8765
+    }
+  ]
+}

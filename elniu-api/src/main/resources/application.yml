@@ -1,0 +1,79 @@
+spring:
+  application:
+    name: elniu-api
+
+  # Sin base de datos montada se trabaja contra H2 en un fichero de la propia
+  # carpeta. En el VPS se activa el perfil «vps» y pasa a PostgreSQL.
+  #
+  # A fichero y no en memoria: probando hace falta que las reservas y los
+  # cambios de la carta sigan ahi despues de reiniciar. Para empezar de cero,
+  # basta con borrar la carpeta datos/.
+  datasource:
+    url: jdbc:h2:file:./datos/elniu;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+  h2:
+    console:
+      enabled: true
+      path: /h2
+
+  jackson:
+    default-property-inclusion: always
+    serialization:
+      write-dates-as-timestamps: false
+
+  # Servidor de correo para avisar de las reservas. Los valores por defecto
+  # apuntan a un SMTP local sin autenticacion, que es lo que se usa al probar.
+  mail:
+    host: ${ELNIU_SMTP_HOST:localhost}
+    port: ${ELNIU_SMTP_PUERTO:1025}
+    username: ${ELNIU_SMTP_USUARIO:}
+    password: ${ELNIU_SMTP_CLAVE:}
+    properties:
+      mail:
+        smtp:
+          auth: ${ELNIU_SMTP_AUTENTICA:false}
+          starttls:
+            enable: ${ELNIU_SMTP_TLS:false}
+          # Sin estos topes, un servidor de correo que no contesta deja el hilo
+          # colgado indefinidamente.
+          connectiontimeout: 8000
+          timeout: 8000
+          writetimeout: 8000
+
+server:
+  port: 8080
+
+elniu:
+  jwt:
+    # Fijalo en el servidor con ELNIU_JWT_SECRETO (32 caracteres o mas).
+    secreto: ${ELNIU_JWT_SECRETO:}
+    minutos: 480
+  admin:
+    usuario: ${ELNIU_ADMIN_USUARIO:admin}
+    # Si se deja vacio, la primera vez se genera una clave al azar y se escribe
+    # en el registro de arranque.
+    clave: ${ELNIU_ADMIN_CLAVE:}
+  cors:
+    origenes:
+      - http://localhost:4200
+      - http://localhost:4300
+      - https://apiqueres.github.io
+  avisos:
+    # A quien se avisa de cada reserva. Vacio a proposito: una direccion
+    # personal no debe quedar escrita en un repositorio publico. Ponla con
+    # ELNIU_AVISOS_DESTINO al arrancar.
+    destino: ${ELNIU_AVISOS_DESTINO:}
+    remitente: ${ELNIU_AVISOS_REMITENTE:reservas@elniu.local}
+    panel: ${ELNIU_PANEL_URL:http://localhost:4200/admin}
+
+logging:
+  level:
+    es.elniu.api: INFO

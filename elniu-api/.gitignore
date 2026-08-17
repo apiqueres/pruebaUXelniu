@@ -1,0 +1,11 @@
+target/
+*.class
+*.log
+
+# La base de datos local de pruebas (H2 en fichero). Nunca al repositorio:
+# lleva reservas con nombres, telefonos y correos de personas.
+datos/
+.idea/
+*.iml
+.vscode/
+.env
