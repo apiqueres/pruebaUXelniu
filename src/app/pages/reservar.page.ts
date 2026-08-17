@@ -20,8 +20,8 @@ import { Revelar } from '../shared/revelar';
           <!-- Peticion de reserva ---------------------------------------- -->
           <div class="bloque entra-1">
             <p class="entradilla bloque__intro">
-              Déjanos la petición y te confirmamos la mesa por teléfono o correo. Si
-              es para hoy o para dentro de un rato, mejor llámanos.
+              Déjanos la petición y te confirmamos la mesa por teléfono o correo. Si es para hoy o
+              para dentro de un rato, mejor llámanos.
             </p>
 
             <div class="directo">
@@ -43,8 +43,8 @@ import { Revelar } from '../shared/revelar';
                   {{ r.telefono }} o a {{ r.email }}.
                 </p>
                 <p class="acuse__aviso">
-                  Esto es una maqueta: la petición se guarda en este navegador y todavía
-                  no llega al restaurante. Para reservar en firme, llámanos.
+                  Esto es una maqueta: la petición se guarda en este navegador y todavía no llega al
+                  restaurante. Para reservar en firme, llámanos.
                 </p>
                 <button type="button" class="boton boton--claro" (click)="otra()">
                   Pedir otra
@@ -86,6 +86,9 @@ import { Revelar } from '../shared/revelar';
                   <label class="campo">
                     <span>Día</span>
                     <input type="date" name="dia" [min]="minimo" [(ngModel)]="dia" required />
+                    @if (diaEnPasado()) {
+                      <small class="error">Solo se puede reservar de hoy en adelante.</small>
+                    }
                   </label>
                   <label class="campo">
                     <span>Hora</span>
@@ -114,13 +117,11 @@ import { Revelar } from '../shared/revelar';
                   ></textarea>
                 </label>
 
-                <button type="submit" class="boton" [disabled]="!completo()">
-                  Pedir reserva
-                </button>
+                <button type="submit" class="boton" [disabled]="!completo()">Pedir reserva</button>
 
                 <p class="apunte">
-                  Todos los campos son obligatorios salvo el comentario. El correo lo
-                  usamos solo para confirmarte la mesa.
+                  Todos los campos son obligatorios salvo el comentario. El correo lo usamos solo
+                  para confirmarte la mesa.
                 </p>
               </form>
             }
@@ -157,8 +158,20 @@ import { Revelar } from '../shared/revelar';
               <div class="dato">
                 <span class="etiqueta dato__clave">Síguenos</span>
                 <div class="redes">
-                  <a [href]="restaurante().instagram" target="_blank" rel="noopener" class="boton boton--linea">Instagram</a>
-                  <a [href]="restaurante().facebook" target="_blank" rel="noopener" class="boton boton--linea">Facebook</a>
+                  <a
+                    [href]="restaurante().instagram"
+                    target="_blank"
+                    rel="noopener"
+                    class="boton boton--linea"
+                    >Instagram</a
+                  >
+                  <a
+                    [href]="restaurante().facebook"
+                    target="_blank"
+                    rel="noopener"
+                    class="boton boton--linea"
+                    >Facebook</a
+                  >
                 </div>
               </div>
             </div>
@@ -179,10 +192,17 @@ import { Revelar } from '../shared/revelar';
     </section>
   `,
   styles: `
-    :host { display: block; }
+    :host {
+      display: block;
+    }
 
-    .hoja--reservar { background: var(--tinta); color: var(--arena); }
-    .titular--claro { color: var(--arena); }
+    .hoja--reservar {
+      background: var(--tinta);
+      color: var(--arena);
+    }
+    .titular--claro {
+      color: var(--arena);
+    }
 
     .columnas {
       display: grid;
@@ -191,11 +211,24 @@ import { Revelar } from '../shared/revelar';
       margin-top: 34px;
     }
 
-    .bloque__intro { margin: 0 0 22px; opacity: .75; max-width: 40ch; }
+    .bloque__intro {
+      margin: 0 0 22px;
+      opacity: 0.75;
+      max-width: 40ch;
+    }
 
-    .directo { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+    .directo {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
 
-    .formulario { display: flex; flex-direction: column; gap: 16px; }
+    .formulario {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
 
     /* Las filas arrancan en una sola columna y solo se abren cuando hay sitio.
 
@@ -212,36 +245,61 @@ import { Revelar } from '../shared/revelar';
 
     /* Dia, hora y personas: en movil el dia se lleva la fila entera y debajo
        van la hora y el numero de comensales, que son cortos. */
-    .fila--cuando { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .fila--cuando > :first-child { grid-column: 1 / -1; }
+    /* Dia, hora y personas van uno por linea en el movil.
 
-    .campo { min-width: 0; }
+       Se probo a poner la hora y las personas emparejadas, pero el campo de
+       hora de Safari en iOS trae un ancho propio que no atiende al de su
+       casilla, y se plantaba encima del de al lado. Con una sola columna no
+       hay forma de que se pisen en ningun navegador. */
+
+    .campo {
+      min-width: 0;
+    }
 
     /* Los campos van sobre fondo oscuro: se invierte la piel clara del
        sistema para que no den un salto de brillo en medio del panel. */
-    .campo > span { opacity: .45; }
+    .campo > span {
+      opacity: 0.45;
+    }
 
     .campo input,
     .campo textarea {
       min-width: 0;
-      background: rgba(255, 255, 255, .06);
-      border-color: rgba(255, 255, 255, .16);
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.16);
       color: var(--arena);
 
-      &::placeholder { color: rgba(222, 219, 214, .35); }
-      &:focus { border-color: var(--naranja); background: rgba(255, 255, 255, .1); }
+      &::placeholder {
+        color: rgba(222, 219, 214, 0.35);
+      }
+      &:focus {
+        border-color: var(--naranja);
+        background: rgba(255, 255, 255, 0.1);
+      }
     }
 
     /* El icono del selector de fecha y hora es negro sobre negro en Chromium. */
-    .campo input::-webkit-calendar-picker-indicator { filter: invert(1); opacity: .5; }
+    .campo input::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.5;
+    }
 
-    .formulario .boton { align-self: flex-start; }
+    .formulario .boton {
+      align-self: flex-start;
+    }
+
+    .error {
+      color: var(--naranja);
+      font-size: 11px;
+      line-height: 1.4;
+      font-weight: 700;
+    }
 
     .apunte {
       margin: 0;
       font-size: 11px;
       line-height: 1.6;
-      opacity: .5;
+      opacity: 0.5;
       max-width: 46ch;
     }
 
@@ -253,8 +311,8 @@ import { Revelar } from '../shared/revelar';
       gap: 12px;
       padding: 26px 24px;
       border-radius: var(--pastilla);
-      background: rgba(226, 112, 30, .14);
-      border: 1px solid rgba(226, 112, 30, .4);
+      background: rgba(226, 112, 30, 0.14);
+      border: 1px solid rgba(226, 112, 30, 0.4);
     }
 
     .acuse__titulo {
@@ -265,31 +323,64 @@ import { Revelar } from '../shared/revelar';
       color: var(--naranja);
     }
 
-    .acuse__resumen { margin: 0; font-size: 15px; line-height: 1.55; }
+    .acuse__resumen {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.55;
+    }
 
-    .acuse__nota { margin: 0; font-size: 13px; line-height: 1.55; opacity: .75; }
+    .acuse__nota {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.55;
+      opacity: 0.75;
+    }
 
-    .acuse__aviso { margin: 0; font-size: 11px; line-height: 1.6; opacity: .5; }
+    .acuse__aviso {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.6;
+      opacity: 0.5;
+    }
 
-    .acuse .boton { align-self: flex-start; margin-top: 6px; }
+    .acuse .boton {
+      align-self: flex-start;
+      margin-top: 6px;
+    }
 
     /* ---- Datos --------------------------------------------------------- */
 
-    .datos { display: flex; flex-direction: column; gap: 26px; }
+    .datos {
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
 
-    .dato { display: flex; flex-direction: column; gap: 10px; }
+    .dato {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-    .dato__clave { opacity: .4; }
+    .dato__clave {
+      opacity: 0.4;
+    }
 
     .dato__valor {
       font-size: 15px;
       line-height: 1.6;
-      opacity: .9;
+      opacity: 0.9;
 
-      &:hover { color: var(--naranja); }
+      &:hover {
+        color: var(--naranja);
+      }
     }
 
-    .horarios { display: flex; flex-direction: column; gap: 14px; }
+    .horarios {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
 
     .horario {
       display: flex;
@@ -297,25 +388,31 @@ import { Revelar } from '../shared/revelar';
       align-items: baseline;
       gap: 6px 14px;
       padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, .12);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     }
 
     .horario__dias {
       flex: 1 1 160px;
       font-size: 13px;
       line-height: 1.4;
-      opacity: .85;
+      opacity: 0.85;
     }
 
     .horario__turno {
       font-family: Anton, sans-serif;
       font-size: 15px;
-      letter-spacing: .02em;
+      letter-spacing: 0.02em;
     }
 
-    .horario--cerrado .horario__turno { color: var(--naranja); }
+    .horario--cerrado .horario__turno {
+      color: var(--naranja);
+    }
 
-    .redes { display: flex; flex-wrap: wrap; gap: 10px; }
+    .redes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
 
     .mosaico {
       display: grid;
@@ -338,18 +435,24 @@ import { Revelar } from '../shared/revelar';
       gap: 14px;
       margin-top: 48px;
       padding-top: 22px;
-      border-top: 1px solid rgba(255, 255, 255, .14);
-      opacity: .35;
+      border-top: 1px solid rgba(255, 255, 255, 0.14);
+      opacity: 0.35;
     }
 
     @media (min-width: 620px) {
-      .fila--dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .fila--cuando { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .fila--cuando > :first-child { grid-column: auto; }
+      .fila--dos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .fila--cuando {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
 
     @media (min-width: 900px) {
-      .columnas { grid-template-columns: 1.1fr .9fr; gap: 60px; }
+      .columnas {
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 60px;
+      }
     }
   `,
 })
@@ -360,7 +463,7 @@ export class ReservarPage {
   readonly restaurante = this.servicio.restaurante;
   readonly hoy = new Date().getFullYear();
 
-  /** No se puede reservar para ayer. */
+  /** Tope inferior del selector de fecha: no se reserva para ayer. */
   readonly minimo = hoyIso();
 
   readonly nombre = signal('');
@@ -381,8 +484,15 @@ export class ReservarPage {
     personas: number;
   } | null>(null);
 
+  /* El atributo `min` del input solo frena al que usa el calendario: escrito a
+     mano, pegado, o en un navegador que no lo respete, la fecha pasada entra
+     igual. Se comprueba tambien aqui, y contra la fecha del momento y no
+     contra `minimo`, por si el formulario lleva abierto desde ayer. */
+  readonly diaEnPasado = computed(() => !!this.dia() && this.dia() < hoyIso());
+
   readonly completo = computed(
     () =>
+      !this.diaEnPasado() &&
       !!this.nombre().trim() &&
       !!this.telefono().trim() &&
       !!this.email().trim() &&

@@ -44,8 +44,11 @@ botón «Restaurar» del panel lo borra y vuelve a la semilla.
 ## Las reservas
 
 El cliente pide mesa desde `/reservar` dejando nombre, teléfono, correo, día,
-hora y número de personas (todo obligatorio salvo el comentario). La petición
-nace **pendiente** y no ocupa sitio hasta que la casa la acepta.
+hora y número de personas (todo obligatorio salvo el comentario). Solo se
+reserva de hoy en adelante: además del `min` del selector de fecha, se
+comprueba en el componente, porque el atributo solo frena a quien usa el
+calendario. La petición nace **pendiente** y no ocupa sitio hasta que la casa
+la acepta.
 
 En el panel, la pestaña **Reservas** muestra:
 
@@ -56,9 +59,15 @@ En el panel, la pestaña **Reservas** muestra:
   número de comensales, y al pulsarlos aparece abajo el detalle de cada reserva
   con su teléfono, correo y observaciones. «Anular» devuelve la reserva a la
   cola de pendientes en vez de borrarla.
-- **Imprimir o guardar en PDF** del día, la semana o el mes, tomando como
-  referencia el día elegido en el calendario. Sale por el diálogo de impresión
-  del navegador, eligiendo «Guardar como PDF» como destino.
+- **Descargar en PDF** del día, la semana o el mes, tomando como referencia el
+  día elegido en el calendario. El documento lo compone **jsPDF** (con
+  `jspdf-autotable` para la tabla), que se carga sólo al pulsar el botón para
+  no lastrar la entrada al panel.
+
+  Antes salía por `window.print()`, pero el resultado dependía del motor de
+  cada navegador: en Safari de iOS los fondos sí se imprimen, así que el color
+  de la web se pintaba sobre toda la hoja y salía gris. Componiendo el
+  documento nosotros, el fichero es idéntico en cualquier dispositivo.
 
 Se guardan en `localStorage` bajo `niu.reservas.v1`, aparte del catálogo, para
 que restaurar la carta no borre las reservas.
