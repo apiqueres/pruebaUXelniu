@@ -5,12 +5,30 @@ separadas en páginas propias y un panel para que la casa mantenga la carta.
 
 ## Arrancar
 
+Hacen falta **las dos mitades**: la web no trae datos propios, todo viene de la
+API.
+
+Primero el backend, en otra terminal:
+
+```bash
+cd ../elniu-api && mvn spring-boot:run
+```
+
+Y después la web:
+
 ```bash
 npm install
 npm start
 ```
 
 Queda en <http://localhost:4200>. Para compilar: `npm run build`.
+
+`ng serve` reenvía `/api` a `localhost:8080` con `proxy.conf.json`, así que la
+web y la API comparten origen y no hay CORS de por medio. En el servidor lo hará
+nginx, y el frontend no se entera: siempre llama a `/api`.
+
+Si la API no está levantada, la web no se queda en blanco: sale una pantalla
+diciéndolo, con un botón para reintentar sin recargar.
 
 ## Páginas
 
@@ -32,14 +50,18 @@ grupo.
 
 ## Los datos
 
-`public/data/catalogo.json` es la semilla, con el contenido real sacado de
-restaurantelniu.es: 21 categorías, 137 productos, 15 menús, 4 tipos de evento y
-la ficha del restaurante (dirección, teléfonos, horarios, redes, aforo).
+Todo viene de la API: 21 categorías, 137 productos, 15 menús, 4 tipos de evento
+y la ficha del restaurante.
 
-`CatalogoService` (`src/app/core/catalogo.service.ts`) la carga una sola vez al
-arrancar y la deja en un signal del que leen todas las páginas. Lo que edita el
-administrador se guarda en `localStorage` bajo la clave `niu.catalogo.v1`; el
-botón «Restaurar» del panel lo borra y vuelve a la semilla.
+`CatalogoService` (`src/app/core/catalogo.service.ts`) pide `GET /api/catalogo`
+una sola vez al arrancar y lo deja en un signal del que leen todas las páginas.
+Cada cambio del panel se manda con `PUT` o `DELETE` y se vuelve a leer la carta
+entera: es una petición más, pero el panel se usa al ritmo de una persona
+editando, y así no hay que repetir en el navegador las reglas del servidor.
+
+`public/data/catalogo.json` ya **no** lo usa la web. Se conserva como origen de
+la semilla: es el fichero que se copió a `elniu-api/src/main/resources/datos/`
+y que el backend carga la primera vez que arranca.
 
 ## Las reservas
 
@@ -93,18 +115,20 @@ En `/admin`, con cuatro pestañas:
 Los borrados piden confirmación en el propio botón: el primer toque pregunta y
 el segundo ejecuta.
 
-## Cuando llegue el backend
+## El acceso al panel
 
-El modelo de `src/app/core/modelos.ts` es el contrato que tendrá que devolver la
-API. Para enchufarla sólo hay que tocar `CatalogoService`:
+`/admin` ya no está abierto: sin sesión enseña la pantalla de acceso y nada más.
+Al entrar, el token se guarda en `localStorage` (`niu.token`) y un interceptor
+lo pone en la cabecera de cada llamada a `/api`. Si el servidor contesta que ya
+no vale, el interceptor cierra la sesión y el panel vuelve a pedir la clave, en
+vez de quedarse dando errores.
 
-- `cargarSemilla()` → `GET /api/catalogo`
-- `guardarProducto` / `borrarProducto` → `POST|PUT|DELETE /api/productos`
-- `guardarMenu` / `borrarMenu` → `POST|PUT|DELETE /api/menus`
-- `guardarCategoria` / `borrarCategoria` → `POST|PUT|DELETE /api/categorias`
+La cuenta la crea el backend la primera vez que arranca; mira su README para
+saber con qué clave.
 
-El resto de la aplicación no se entera: todas las páginas leen del mismo signal.
+## Lo que falta
 
-Falta por hacer en esa fase: autenticación del panel (ahora `/admin` está
-abierto), subida de imágenes desde el panel en lugar de escribir la ruta a mano,
-y que la petición de reserva de `/reservar` llegue de verdad al restaurante.
+- **Aviso por correo** a la casa cuando entra una petición de reserva.
+- **Subida de imágenes** desde el panel, en lugar de escribir la ruta a mano.
+- Poner las dos mitades detrás del mismo nginx en el VPS, con la base de datos
+  en PostgreSQL.

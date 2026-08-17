@@ -43,8 +43,8 @@ import { Revelar } from '../shared/revelar';
                   {{ r.telefono }} o a {{ r.email }}.
                 </p>
                 <p class="acuse__aviso">
-                  Esto es una maqueta: la petición se guarda en este navegador y todavía no llega al
-                  restaurante. Para reservar en firme, llámanos.
+                  Si es para hoy o para dentro de un rato, llámanos: así te la confirmamos al
+                  momento.
                 </p>
                 <button type="button" class="boton boton--claro" (click)="otra()">
                   Pedir otra
@@ -117,7 +117,13 @@ import { Revelar } from '../shared/revelar';
                   ></textarea>
                 </label>
 
-                <button type="submit" class="boton" [disabled]="!completo()">Pedir reserva</button>
+                @if (fallo()) {
+                  <p class="error" role="alert">{{ fallo() }}</p>
+                }
+
+                <button type="submit" class="boton" [disabled]="!completo() || enviando()">
+                  {{ enviando() ? 'Enviando…' : 'Pedir reserva' }}
+                </button>
 
                 <p class="apunte">
                   Todos los campos son obligatorios salvo el comentario. El correo lo usamos solo
@@ -473,6 +479,8 @@ export class ReservarPage {
   readonly hora = signal('');
   readonly personas = signal<number | null>(2);
   readonly comentario = signal('');
+  readonly enviando = signal(false);
+  readonly fallo = signal<string | null>(null);
 
   /** La reserva recien pedida; mientras exista, en su sitio va el acuse. */
   readonly enviada = signal<{
@@ -516,25 +524,42 @@ export class ReservarPage {
     return `https://wa.me/${this.restaurante().whatsapp}`;
   }
 
-  enviar(): void {
-    if (!this.completo()) return;
+  async enviar(): Promise<void> {
+    if (!this.completo() || this.enviando()) return;
 
-    const reserva = this.reservas.crear({
-      nombre: this.nombre().trim(),
-      telefono: this.telefono().trim(),
-      email: this.email().trim(),
-      dia: this.dia(),
-      hora: this.hora(),
-      personas: Number(this.personas()),
-      comentario: this.comentario().trim() || null,
-    });
+    this.enviando.set(true);
+    this.fallo.set(null);
 
-    this.enviada.set(reserva);
+    try {
+      const reserva = await this.reservas.crear({
+        nombre: this.nombre().trim(),
+        telefono: this.telefono().trim(),
+        email: this.email().trim(),
+        dia: this.dia(),
+        hora: this.hora(),
+        personas: Number(this.personas()),
+        comentario: this.comentario().trim() || null,
+      });
+
+      this.enviada.set(reserva);
+    } catch (e: unknown) {
+      /* Si algo falla hay que decirlo: dar por buena una mesa que no ha
+         quedado grabada es peor que no ofrecer el formulario. */
+      const estado = (e as { status?: number }).status;
+      this.fallo.set(
+        estado === 0
+          ? 'No hay conexión con el restaurante. Llámanos y te atendemos al momento.'
+          : 'No hemos podido registrar la petición. Inténtalo de nuevo o llámanos.',
+      );
+    } finally {
+      this.enviando.set(false);
+    }
   }
 
   /** Vuelve al formulario en blanco para pedir otra mesa. */
   otra(): void {
     this.enviada.set(null);
+    this.fallo.set(null);
     this.nombre.set('');
     this.telefono.set('');
     this.email.set('');

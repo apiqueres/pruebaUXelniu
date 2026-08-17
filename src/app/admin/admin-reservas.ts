@@ -503,20 +503,23 @@ export class AdminReservas {
 
   // ---- Decisiones ----------------------------------------------------------
 
-  confirmar(r: Reserva): void {
-    this.reservas.confirmar(r.id);
+  /* Las tres esperan al servidor antes de mover nada: quien manda sobre el
+     estado de una reserva es la base de datos, no la pantalla. */
+
+  async confirmar(r: Reserva): Promise<void> {
+    await this.reservas.confirmar(r.id);
     // Se salta al dia de la reserva recien aceptada para verla ya en su sitio.
     this.mes.set(inicioMes(r.dia));
     this.diaElegido.set(r.dia);
   }
 
-  rechazar(r: Reserva): void {
-    this.reservas.rechazar(r.id);
+  async rechazar(r: Reserva): Promise<void> {
+    await this.reservas.rechazar(r.id);
   }
 
   /** Anular devuelve la reserva a la cola en vez de borrarla sin dejar rastro. */
-  devolver(r: Reserva): void {
-    this.reservas.reabrir(r.id);
+  async devolver(r: Reserva): Promise<void> {
+    await this.reservas.reabrir(r.id);
   }
 
   // ---- PDF -----------------------------------------------------------------

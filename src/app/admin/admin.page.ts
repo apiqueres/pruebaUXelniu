@@ -1,19 +1,24 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CatalogoService } from '../core/catalogo.service';
 import { ReservasService } from '../core/reservas.service';
+import { AutenticacionService } from '../core/autenticacion.service';
 import { AdminProductos } from './admin-productos';
 import { AdminMenus } from './admin-menus';
 import { AdminCategorias } from './admin-categorias';
 import { AdminReservas } from './admin-reservas';
+import { LoginPage } from './login.page';
 
 type Pestana = 'reservas' | 'productos' | 'menus' | 'categorias';
 
 @Component({
   selector: 'niu-admin',
-  imports: [RouterLink, AdminProductos, AdminMenus, AdminCategorias, AdminReservas],
+  imports: [RouterLink, AdminProductos, AdminMenus, AdminCategorias, AdminReservas, LoginPage],
   template: `
+    @if (!identificado()) {
+      <niu-login />
+    } @else {
     <div class="admin">
       <header class="barra-admin">
         <div class="barra-admin__marca">
@@ -42,28 +47,39 @@ type Pestana = 'reservas' | 'productos' | 'menus' | 'categorias';
           }
         </nav>
 
-        <button type="button" class="boton boton--linea restaurar" (click)="restaurar()">
-          {{ confirmandoRestaurar() ? '¿Seguro?' : 'Restaurar' }}
+        <button type="button" class="boton boton--linea restaurar" (click)="salir()">
+          Salir
         </button>
       </header>
 
       <p class="apunte">
-        Los cambios se guardan en este navegador. Cuando esté el servidor, pasarán a
-        guardarse en la base de datos y se verán desde cualquier dispositivo.
+        Conectado como <strong>{{ usuario() }}</strong
+        >. Los cambios se guardan en el servidor y se ven al momento en la web.
       </p>
 
       <main class="lienzo">
         @switch (pestana()) {
-          @case ('reservas') { <niu-admin-reservas /> }
-          @case ('productos') { <niu-admin-productos /> }
-          @case ('menus') { <niu-admin-menus /> }
-          @case ('categorias') { <niu-admin-categorias /> }
+          @case ('reservas') {
+            <niu-admin-reservas />
+          }
+          @case ('productos') {
+            <niu-admin-productos />
+          }
+          @case ('menus') {
+            <niu-admin-menus />
+          }
+          @case ('categorias') {
+            <niu-admin-categorias />
+          }
         }
       </main>
     </div>
+    }
   `,
   styles: `
-    :host { display: block; }
+    :host {
+      display: block;
+    }
 
     .admin {
       min-height: 100svh;
@@ -82,7 +98,12 @@ type Pestana = 'reservas' | 'productos' | 'menus' | 'categorias';
       color: var(--arena);
     }
 
-    .barra-admin__marca { display: flex; align-items: center; gap: 14px; margin-right: auto; }
+    .barra-admin__marca {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-right: auto;
+    }
 
     .volver {
       display: flex;
@@ -91,11 +112,13 @@ type Pestana = 'reservas' | 'productos' | 'menus' | 'categorias';
       width: 38px;
       height: 38px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, .1);
+      background: rgba(255, 255, 255, 0.1);
       font-size: 17px;
-      transition: background .3s var(--suave);
+      transition: background 0.3s var(--suave);
 
-      &:hover { background: var(--naranja); }
+      &:hover {
+        background: var(--naranja);
+      }
     }
 
     .titulo {
@@ -106,14 +129,18 @@ type Pestana = 'reservas' | 'productos' | 'menus' | 'categorias';
       line-height: 1.1;
     }
 
-    .sub { display: block; margin-top: 3px; opacity: .45; }
+    .sub {
+      display: block;
+      margin-top: 3px;
+      opacity: 0.45;
+    }
 
     .pestanas {
       display: flex;
       gap: 2px;
       padding: 4px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, 0.08);
       overflow-x: auto;
     }
 
@@ -128,12 +155,17 @@ type Pestana = 'reservas' | 'productos' | 'menus' | 'categorias';
       font-family: Inter, sans-serif;
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: .18em;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      transition: background .3s var(--suave), color .3s var(--suave);
+      transition:
+        background 0.3s var(--suave),
+        color 0.3s var(--suave);
     }
 
-    .pestana--activa { background: var(--arena); color: var(--tinta); }
+    .pestana--activa {
+      background: var(--arena);
+      color: var(--tinta);
+    }
 
     .aviso {
       display: inline-flex;
@@ -151,35 +183,46 @@ type Pestana = 'reservas' | 'productos' | 'menus' | 'categorias';
       vertical-align: middle;
     }
 
-    .restaurar { color: var(--arena); padding: 11px 18px; }
+    .restaurar {
+      color: var(--arena);
+      padding: 11px 18px;
+    }
 
     .apunte {
       margin: 14px 6px 22px;
       font-size: 11px;
       line-height: 1.6;
-      opacity: .5;
+      opacity: 0.5;
       max-width: 70ch;
     }
 
     @media (max-width: 720px) {
-      .barra-admin__marca { margin-right: 0; width: 100%; }
-      .pestanas { width: 100%; }
-      .restaurar { width: 100%; }
+      .barra-admin__marca {
+        margin-right: 0;
+        width: 100%;
+      }
+      .pestanas {
+        width: 100%;
+      }
+      .restaurar {
+        width: 100%;
+      }
     }
   `,
 })
 export class AdminPage {
   private readonly servicio = inject(CatalogoService);
-
   private readonly reservasServicio = inject(ReservasService);
+  private readonly auth = inject(AutenticacionService);
 
   readonly restaurante = this.servicio.restaurante;
   readonly pendientes = this.reservasServicio.pendientes;
+  readonly identificado = this.auth.identificado;
+  readonly usuario = this.auth.usuario;
 
   /* Se abre por reservas y no por la carta: las peticiones caducan y los
      platos no. */
   readonly pestana = signal<Pestana>('reservas');
-  readonly confirmandoRestaurar = signal(false);
 
   readonly pestanas: { id: Pestana; etiqueta: string }[] = [
     { id: 'reservas', etiqueta: 'Reservas' },
@@ -188,18 +231,18 @@ export class AdminPage {
     { id: 'categorias', etiqueta: 'Categorías' },
   ];
 
-  /* Restaurar borra el trabajo del cliente, asi que el primer clic solo avisa
-     y el segundo ejecuta. */
-  private temporizador?: ReturnType<typeof setTimeout>;
+  constructor() {
+    /* Las reservas solo se piden cuando hay sesion, y se vuelven a pedir al
+       entrar: el efecto cubre tanto el caso de llegar con el token ya guardado
+       como el de acabar de escribir la clave. */
+    effect(() => {
+      if (this.identificado()) {
+        void this.reservasServicio.cargar();
+      }
+    });
+  }
 
-  async restaurar(): Promise<void> {
-    if (!this.confirmandoRestaurar()) {
-      this.confirmandoRestaurar.set(true);
-      this.temporizador = setTimeout(() => this.confirmandoRestaurar.set(false), 4000);
-      return;
-    }
-    clearTimeout(this.temporizador);
-    this.confirmandoRestaurar.set(false);
-    await this.servicio.restaurarSemilla();
+  salir(): void {
+    this.auth.salir();
   }
 }

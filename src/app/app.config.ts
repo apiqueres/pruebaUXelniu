@@ -5,28 +5,28 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { routes } from './app.routes';
 import { CatalogoService } from './core/catalogo.service';
+import { interceptorToken } from './core/token.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([interceptorToken])),
     provideRouter(
       routes,
-      // Cada seccion es ahora su propia pagina: al cambiar de ruta hay que
-      // volver arriba, y al usar el boton «atras» recuperar donde estaba.
+      // Cada seccion es su propia pagina: al cambiar de ruta hay que volver
+      // arriba, y al usar el boton «atras» recuperar donde estaba.
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled', anchorScrolling: 'enabled' }),
       // Sin `withViewTransitions()`: la View Transition API abortaba en cada
-      // navegacion («Transition was aborted because of invalid state») y la
-      // entrada de cada pagina ya la hacen las clases `.entra` del CSS.
+      // navegacion y la entrada de cada pagina ya la hacen las clases `.entra`.
     ),
-    // La carta se carga una sola vez antes de pintar nada, asi ninguna pagina
-    // tiene que lidiar con el estado «todavia no hay datos».
+    // La carta se trae del servidor antes de pintar nada. Si el servidor no
+    // responde, `inicializar` no lanza: la aplicacion arranca y lo dice.
     provideAppInitializer(() => inject(CatalogoService).inicializar()),
   ],
 };

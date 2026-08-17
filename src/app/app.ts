@@ -14,6 +14,8 @@ export class App {
   private readonly router = inject(Router);
   private readonly catalogo = inject(CatalogoService);
 
+  readonly cargado = this.catalogo.cargado;
+  readonly error = this.catalogo.error;
   readonly restaurante = this.catalogo.restaurante;
 
   private readonly url = signal(this.router.url);
@@ -29,9 +31,17 @@ export class App {
     { ruta: '/reservar', etiqueta: 'Visítanos' },
   ];
 
+  readonly reintentando = signal(false);
+
   constructor() {
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => this.url.set(e.urlAfterRedirects));
+  }
+
+  async reintentar(): Promise<void> {
+    this.reintentando.set(true);
+    await this.catalogo.recargar();
+    this.reintentando.set(false);
   }
 }

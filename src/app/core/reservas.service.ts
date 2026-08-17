@@ -1,21 +1,23 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
-import type { EstadoReserva, PeticionReserva, Reserva } from './modelos';
+import { API } from './api';
 import { hoyIso } from './fechas';
+import type { PeticionReserva, Reserva } from './modelos';
 
-/* Las reservas viven en el navegador mientras no haya servidor, igual que la
-   carta. La clave es distinta a proposito: restaurar la carta desde el panel
-   no debe llevarse por delante las reservas de los clientes.
+/* El alta la hace cualquiera desde la web; el resto, solo la casa con su token.
 
-   Cuando llegue el backend solo cambian `leer` y `persistir`, y `crear` pasara
-   a ser el POST que ademas dispara el aviso por correo a la casa. */
-const CLAVE = 'niu.reservas.v1';
-
+   Las reservas se traen todas de una vez y el calendario, los totales y los
+   listados se derivan aqui. Es un solo viaje al servidor y luego moverse por
+   los meses no cuesta nada, que es como se usa el panel. */
 @Injectable({ providedIn: 'root' })
 export class ReservasService {
-  private readonly datos = signal<Reserva[]>(this.leer());
+  private readonly http = inject(HttpClient);
+  private readonly datos = signal<Reserva[]>([]);
 
   readonly reservas = this.datos.asReadonly();
+  readonly error = signal<string | null>(null);
 
   /** Peticiones sin resolver, la mas antigua primero: se atienden por orden. */
   readonly pendientes = computed(() =>
@@ -34,98 +36,76 @@ export class ReservasService {
       .sort((a, b) => a.dia.localeCompare(b.dia) || a.hora.localeCompare(b.hora));
   });
 
+  // ---- Carga (solo con token) ---------------------------------------------
+
+  async cargar(): Promise<void> {
+    try {
+      const lista = await firstValueFrom(this.http.get<Reserva[]>(`${API}/admin/reservas`));
+      this.datos.set(lista);
+      this.error.set(null);
+    } catch (e: unknown) {
+      const estado = (e as { status?: number }).status;
+      // El 401 lo resuelve el interceptor cerrando la sesion; aqui solo se
+      // avisa de lo demas.
+      if (estado !== 401) {
+        this.error.set('No se han podido traer las reservas del servidor.');
+      }
+    }
+  }
+
   // ---- Consultas -----------------------------------------------------------
 
   /* Las fechas son «AAAA-MM-DD» y las horas «HH:MM», asi que comparar y
-     ordenar como texto da el mismo resultado que hacerlo como fecha, sin tener
-     que construir un Date por reserva. */
+     ordenar como texto da el mismo resultado que hacerlo como fecha. */
 
-  /** Reservas confirmadas de un dia, ordenadas por hora. */
   deDia(dia: string): Reserva[] {
     return this.confirmadas()
       .filter((r) => r.dia === dia)
       .sort((a, b) => a.hora.localeCompare(b.hora));
   }
 
-  /** Confirmadas entre dos dias, ambos incluidos. */
   enRango(desde: string, hasta: string): Reserva[] {
     return this.confirmadas()
       .filter((r) => r.dia >= desde && r.dia <= hasta)
       .sort((a, b) => a.dia.localeCompare(b.dia) || a.hora.localeCompare(b.hora));
   }
 
-  /** Cuantas personas hay sentadas ese dia, para el resumen del calendario. */
   comensalesDe(dia: string): number {
     return this.deDia(dia).reduce((suma, r) => suma + r.personas, 0);
   }
 
-  // ---- Altas y resoluciones ------------------------------------------------
+  // ---- Alta desde la web (publica) ----------------------------------------
 
-  crear(peticion: PeticionReserva): Reserva {
-    const reserva: Reserva = {
-      ...peticion,
-      id: this.nuevoId(peticion),
-      estado: 'pendiente',
-      creada: new Date().toISOString(),
-      resuelta: null,
-    };
-    this.datos.update((lista) => [...lista, reserva]);
-    this.persistir();
-    return reserva;
+  async crear(peticion: PeticionReserva): Promise<Reserva> {
+    return firstValueFrom(this.http.post<Reserva>(`${API}/reservas`, peticion));
   }
 
-  confirmar(id: string): void {
-    this.resolver(id, 'confirmada');
+  // ---- Decisiones de la casa ----------------------------------------------
+
+  async confirmar(id: string): Promise<void> {
+    await this.resolver(id, 'confirmar');
   }
 
-  rechazar(id: string): void {
-    this.resolver(id, 'rechazada');
+  async rechazar(id: string): Promise<void> {
+    await this.resolver(id, 'rechazar');
   }
 
   /** Devuelve una reserva ya resuelta a la cola de pendientes. */
-  reabrir(id: string): void {
-    this.datos.update((lista) =>
-      lista.map((r) => (r.id === id ? { ...r, estado: 'pendiente' as const, resuelta: null } : r)),
-    );
-    this.persistir();
+  async reabrir(id: string): Promise<void> {
+    await this.resolver(id, 'reabrir');
   }
 
-  borrar(id: string): void {
+  async borrar(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete<void>(`${API}/admin/reservas/${id}`));
     this.datos.update((lista) => lista.filter((r) => r.id !== id));
-    this.persistir();
   }
 
-  private resolver(id: string, estado: EstadoReserva): void {
-    this.datos.update((lista) =>
-      lista.map((r) => (r.id === id ? { ...r, estado, resuelta: new Date().toISOString() } : r)),
+  /* Se guarda la reserva que devuelve el servidor en vez de suponer como queda:
+     asi el estado y la fecha de resolucion son los que de verdad hay grabados. */
+  private async resolver(id: string, accion: string): Promise<void> {
+    const actualizada = await firstValueFrom(
+      this.http.post<Reserva>(`${API}/admin/reservas/${id}/${accion}`, {}),
     );
-    this.persistir();
-  }
-
-  // ---- Persistencia --------------------------------------------------------
-
-  private leer(): Reserva[] {
-    try {
-      const crudo = localStorage.getItem(CLAVE);
-      const lista = crudo ? JSON.parse(crudo) : [];
-      return Array.isArray(lista) ? (lista as Reserva[]) : [];
-    } catch {
-      // Un JSON corrupto no debe tumbar la pagina de reservas del cliente.
-      return [];
-    }
-  }
-
-  private persistir(): void {
-    localStorage.setItem(CLAVE, JSON.stringify(this.datos()));
-  }
-
-  /* Identificador legible: dia, hora y un sufijo corto. Asi, mirando la clave
-     en el navegador, ya se sabe de que reserva se trata. */
-  private nuevoId(p: PeticionReserva): string {
-    const base = `r-${p.dia.replace(/-/g, '')}-${p.hora.replace(':', '')}`;
-    const usados = new Set(this.datos().map((r) => r.id));
-    let n = 1;
-    while (usados.has(`${base}-${n}`)) n++;
-    return `${base}-${n}`;
+    this.datos.update((lista) => lista.map((r) => (r.id === id ? actualizada : r)));
   }
 }

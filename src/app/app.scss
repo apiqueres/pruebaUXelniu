@@ -1,6 +1,55 @@
 /* Armazon: cabecera fija arriba, barra flotante abajo y el hueco del medio
    para la pagina de turno. */
 
+/* Pantalla de cortesia mientras llega la carta, o cuando no llega. */
+.aviso-servidor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.aviso-servidor__caja {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  max-width: 460px;
+  padding: 34px 28px;
+  border-radius: var(--pastilla);
+  background: var(--arena-clara);
+}
+
+.aviso-servidor__titulo {
+  margin: 0;
+  font-family: Anton, sans-serif;
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+.aviso-servidor__texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.75;
+}
+
+.aviso-servidor__pista {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  opacity: 0.5;
+
+  code {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(46, 46, 46, 0.08);
+    font-size: 11px;
+  }
+}
+
 .cabecera {
   position: fixed;
   top: 0;

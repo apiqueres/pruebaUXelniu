@@ -1,36 +1,58 @@
 <div class="ruido"></div>
 
-@if (!esAdmin()) {
-  <header class="cabecera">
-    <a routerLink="/" class="marca" aria-label="Inicio · Restaurant el Niu">&#8212;EL NIU</a>
-
-    <div class="cabecera__acciones">
-      <a class="boton boton--claro" [href]="'tel:+34' + restaurante().telefono">Llamar</a>
-      <a class="boton" routerLink="/reservar">Reservar</a>
+@if (error()) {
+  <!-- Sin carta no hay nada que enseñar, asi que se dice por que y como
+       arreglarlo, en vez de dejar la pagina en blanco. -->
+  <div class="aviso-servidor">
+    <div class="aviso-servidor__caja">
+      <p class="aviso-servidor__titulo">No se puede cargar la carta</p>
+      <p class="aviso-servidor__texto">{{ error() }}</p>
+      <p class="aviso-servidor__pista">
+        Arranca la API con <code>mvn spring-boot:run</code> dentro de
+        <code>elniu-api</code> y vuelve a intentarlo.
+      </p>
+      <button type="button" class="boton" (click)="reintentar()" [disabled]="reintentando()">
+        {{ reintentando() ? 'Probando…' : 'Reintentar' }}
+      </button>
     </div>
-  </header>
-}
+  </div>
+} @else if (!cargado()) {
+  <div class="aviso-servidor">
+    <p class="aviso-servidor__texto">Cargando la carta…</p>
+  </div>
+} @else {
+  @if (!esAdmin()) {
+    <header class="cabecera">
+      <a routerLink="/" class="marca" aria-label="Inicio · Restaurant el Niu">&#8212;EL NIU</a>
 
-<main [class.main--admin]="esAdmin()">
-  <router-outlet />
-</main>
+      <div class="cabecera__acciones">
+        <a class="boton boton--claro" [href]="'tel:+34' + restaurante().telefono">Llamar</a>
+        <a class="boton" routerLink="/reservar">Reservar</a>
+      </div>
+    </header>
+  }
 
-@if (!esAdmin()) {
-  <nav class="barra" aria-label="Secciones">
-    <a
-      routerLink="/"
-      routerLinkActive="barra__enlace--activo"
-      [routerLinkActiveOptions]="{ exact: true }"
-      class="barra__enlace etiqueta"
-      >Inicio</a
-    >
-    @for (s of secciones; track s.ruta) {
+  <main [class.main--admin]="esAdmin()">
+    <router-outlet />
+  </main>
+
+  @if (!esAdmin()) {
+    <nav class="barra" aria-label="Secciones">
       <a
-        [routerLink]="s.ruta"
+        routerLink="/"
         routerLinkActive="barra__enlace--activo"
+        [routerLinkActiveOptions]="{ exact: true }"
         class="barra__enlace etiqueta"
-        >{{ s.etiqueta }}</a
+        >Inicio</a
       >
-    }
-  </nav>
+      @for (s of secciones; track s.ruta) {
+        <a
+          [routerLink]="s.ruta"
+          routerLinkActive="barra__enlace--activo"
+          class="barra__enlace etiqueta"
+          >{{ s.etiqueta }}</a
+        >
+      }
+    </nav>
+  }
 }

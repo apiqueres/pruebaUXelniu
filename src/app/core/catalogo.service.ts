@@ -2,16 +2,16 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
+import { API } from './api';
 import type { Catalogo, Categoria, Menu, Producto, TipoCategoria } from './modelos';
 
-/* Mientras no exista el backend, lo que edita el administrador se guarda en el
-   navegador. `catalogo.json` es la semilla: se carga la primera vez y despues
-   solo si el cliente pulsa «restaurar».
+/* Toda la carta viene del servidor en una sola llamada, y cada cambio del panel
+   se manda y se vuelve a leer.
 
-   Cuando llegue la API de Spring Boot solo cambian `cargar` y `persistir`: el
-   resto de la aplicacion lee siempre del mismo signal. */
-const CLAVE = 'niu.catalogo.v1';
-
+   Releerla entera despues de guardar es una peticion mas, pero el panel se usa
+   al ritmo de una persona editando y asi no hay que repetir aqui las reglas del
+   servidor: quien manda sobre los identificadores, el orden o lo que arrastra
+   el borrado de una categoria es la API. */
 @Injectable({ providedIn: 'root' })
 export class CatalogoService {
   private readonly http = inject(HttpClient);
@@ -19,6 +19,9 @@ export class CatalogoService {
 
   readonly catalogo = this.datos.asReadonly();
   readonly cargado = computed(() => this.datos() !== null);
+
+  /** Mensaje para la pantalla cuando el servidor no responde. */
+  readonly error = signal<string | null>(null);
 
   readonly restaurante = computed(() => this.datos()!.restaurante);
   readonly avisos = computed(() => this.datos()!.avisos);
@@ -35,58 +38,30 @@ export class CatalogoService {
   readonly menusFijos = computed(() => this.menus().filter((m) => m.activo && !m.especial));
   readonly menusEspeciales = computed(() => this.menus().filter((m) => m.activo && m.especial));
 
-  /** Los seis platos con foto que abren la portada. */
-  readonly destacados = computed(() =>
-    this.productos().filter((p) => p.destacado && p.activo),
-  );
+  /** Los platos con foto que abren la portada. */
+  readonly destacados = computed(() => this.productos().filter((p) => p.destacado && p.activo));
 
-  // ---- Carga y persistencia ------------------------------------------------
+  // ---- Carga ---------------------------------------------------------------
 
+  /* No lanza nunca: si el servidor esta caido la aplicacion tiene que arrancar
+     igual y decirlo, no quedarse en blanco. */
   async inicializar(): Promise<void> {
-    if (this.datos()) return;
-
-    const guardado = this.leerLocal();
-    if (guardado) {
-      this.datos.set(guardado);
-      return;
-    }
-    await this.cargarSemilla();
-  }
-
-  /* Ojo con el orden: la carta no puede quedarse en null ni un instante
-     mientras se descarga la semilla, porque las paginas ya pintadas la estan
-     leyendo y reventarian. Primero se trae el JSON y luego se sustituye. */
-  async restaurarSemilla(): Promise<void> {
-    localStorage.removeItem(CLAVE);
-    await this.cargarSemilla();
-  }
-
-  private async cargarSemilla(): Promise<void> {
-    const semilla = await firstValueFrom(this.http.get<Catalogo>('data/catalogo.json'));
-    this.datos.set(semilla);
-  }
-
-  private leerLocal(): Catalogo | null {
     try {
-      const crudo = localStorage.getItem(CLAVE);
-      return crudo ? (JSON.parse(crudo) as Catalogo) : null;
-    } catch {
-      // Un JSON corrupto no debe dejar la carta en blanco: se ignora y se
-      // vuelve a la semilla.
-      return null;
+      const catalogo = await firstValueFrom(this.http.get<Catalogo>(`${API}/catalogo`));
+      this.datos.set(catalogo);
+      this.error.set(null);
+    } catch (e: unknown) {
+      const estado = (e as { status?: number }).status;
+      this.error.set(
+        estado === 0
+          ? 'No hay conexión con el servidor de la carta.'
+          : 'El servidor no ha podido darnos la carta.',
+      );
     }
   }
 
-  private persistir(): void {
-    const actual = this.datos();
-    if (actual) localStorage.setItem(CLAVE, JSON.stringify(actual));
-  }
-
-  private modificar(cambio: (c: Catalogo) => Catalogo): void {
-    const actual = this.datos();
-    if (!actual) return;
-    this.datos.set(cambio(actual));
-    this.persistir();
+  async recargar(): Promise<void> {
+    await this.inicializar();
   }
 
   // ---- Consultas -----------------------------------------------------------
@@ -107,51 +82,43 @@ export class CatalogoService {
 
   // ---- Altas, bajas y modificaciones --------------------------------------
 
-  guardarProducto(producto: Producto): void {
-    this.modificar((c) => {
-      const i = c.productos.findIndex((p) => p.id === producto.id);
-      const productos = [...c.productos];
-      if (i >= 0) productos[i] = producto;
-      else productos.push(producto);
-      return { ...c, productos };
-    });
+  /* Siempre PUT, tanto al crear como al editar: el frontend ya sabe el
+     identificador del elemento y el servidor lo guarda si es nuevo o lo
+     sustituye si existia. Una sola ruta para los dos casos. */
+
+  async guardarProducto(producto: Producto): Promise<void> {
+    await firstValueFrom(
+      this.http.put<Producto>(`${API}/admin/productos/${producto.id}`, producto),
+    );
+    await this.recargar();
   }
 
-  borrarProducto(id: string): void {
-    this.modificar((c) => ({ ...c, productos: c.productos.filter((p) => p.id !== id) }));
+  async borrarProducto(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete<void>(`${API}/admin/productos/${id}`));
+    await this.recargar();
   }
 
-  guardarMenu(menu: Menu): void {
-    this.modificar((c) => {
-      const i = c.menus.findIndex((m) => m.id === menu.id);
-      const menus = [...c.menus];
-      if (i >= 0) menus[i] = menu;
-      else menus.push(menu);
-      return { ...c, menus };
-    });
+  async guardarMenu(menu: Menu): Promise<void> {
+    await firstValueFrom(this.http.put<Menu>(`${API}/admin/menus/${menu.id}`, menu));
+    await this.recargar();
   }
 
-  borrarMenu(id: string): void {
-    this.modificar((c) => ({ ...c, menus: c.menus.filter((m) => m.id !== id) }));
+  async borrarMenu(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete<void>(`${API}/admin/menus/${id}`));
+    await this.recargar();
   }
 
-  guardarCategoria(categoria: Categoria): void {
-    this.modificar((c) => {
-      const i = c.categorias.findIndex((x) => x.id === categoria.id);
-      const categorias = [...c.categorias];
-      if (i >= 0) categorias[i] = categoria;
-      else categorias.push(categoria);
-      return { ...c, categorias };
-    });
+  async guardarCategoria(categoria: Categoria): Promise<void> {
+    await firstValueFrom(
+      this.http.put<Categoria>(`${API}/admin/categorias/${categoria.id}`, categoria),
+    );
+    await this.recargar();
   }
 
-  /** Borrar una categoria arrastra sus productos: no deben quedar huerfanos. */
-  borrarCategoria(id: string): void {
-    this.modificar((c) => ({
-      ...c,
-      categorias: c.categorias.filter((x) => x.id !== id),
-      productos: c.productos.filter((p) => p.categoriaId !== id),
-    }));
+  /** Borrar una categoria arrastra sus productos; de eso se encarga el servidor. */
+  async borrarCategoria(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete<void>(`${API}/admin/categorias/${id}`));
+    await this.recargar();
   }
 
   /** Identificador legible y unico a partir del nombre que escribe el cliente. */
