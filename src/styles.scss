@@ -176,6 +176,10 @@ img { max-width: 100%; }
 
   input, textarea, select {
     width: 100%;
+    /* Alto comun para todos los campos. Sin el, cada tipo de input se mide
+       segun su contenido y una columna de nombre, fecha, hora y numero salia
+       con cuatro alturas distintas. */
+    min-height: 46px;
     padding: 12px 14px;
     border: 1px solid rgba(46, 46, 46, .16);
     border-radius: 14px;
@@ -189,6 +193,38 @@ img { max-width: 100%; }
   }
 
   textarea { resize: vertical; min-height: 78px; }
+
+  /* Fecha y hora en iOS.
+
+     Safari les da su propia piel: el valor sale centrado en la casilla y el
+     alto lo marca el contenido, asi que en el movil estos dos campos rompian
+     la alineacion de la columna y quedaban mas bajos que los de al lado.
+     Quitando la apariencia nativa y alineando el valor a la izquierda se
+     comportan como el resto. */
+  input[type='date'],
+  input[type='time'] {
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: left;
+    /* Alto exacto y sin relleno vertical: el trozo del valor que dibuja
+       WebKit ya viene con su propia altura, y sumarle el relleno dejaba estos
+       dos campos mas altos que los demas. */
+    height: 46px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* El valor de fecha y hora es un trozo aparte dentro del campo, con su
+     propia alineacion y sus propios margenes en WebKit. */
+  input::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
+
+  /* En un campo vacio, iOS pinta el hueco del valor con el ancho completo y
+     empuja el texto; sin ese relleno se queda pegado al borde izquierdo como
+     los demas. */
+  input::-webkit-datetime-edit { padding: 0; }
 }
 
 /* ---- Panel de administracion --------------------------------------------

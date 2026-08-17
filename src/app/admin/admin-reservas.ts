@@ -164,7 +164,6 @@ type Alcance = 'dia' | 'semana' | 'mes';
         <button type="button" class="boton" (click)="descargarPdf('mes')">Del mes</button>
       </div>
     </section>
-
   `,
   styles: `
     :host {
