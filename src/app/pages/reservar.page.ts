@@ -2,6 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CatalogoService } from '../core/catalogo.service';
+import { ReservasService } from '../core/reservas.service';
+import { fechaLarga, hoyIso } from '../core/fechas';
 import { FotoPipe } from '../shared/foto.pipe';
 import { Revelar } from '../shared/revelar';
 
@@ -18,8 +20,8 @@ import { Revelar } from '../shared/revelar';
           <!-- Peticion de reserva ---------------------------------------- -->
           <div class="bloque entra-1">
             <p class="entradilla bloque__intro">
-              Reserva por teléfono o por WhatsApp y te confirmamos al momento. También
-              puedes dejarnos la petición aquí.
+              Déjanos la petición y te confirmamos la mesa por teléfono o correo. Si
+              es para hoy o para dentro de un rato, mejor llámanos.
             </p>
 
             <div class="directo">
@@ -29,54 +31,99 @@ import { Revelar } from '../shared/revelar';
               <a class="boton" [href]="whatsapp()" target="_blank" rel="noopener">WhatsApp</a>
             </div>
 
-            <form class="formulario" (ngSubmit)="enviar()">
-              <div class="formulario__fila">
+            @if (enviada(); as r) {
+              <div class="acuse" role="status">
+                <p class="acuse__titulo">Petición recibida</p>
+                <p class="acuse__resumen">
+                  {{ r.personas }} {{ r.personas === 1 ? 'persona' : 'personas' }} el
+                  {{ diaLargo(r.dia) }} a las {{ r.hora }}, a nombre de {{ r.nombre }}.
+                </p>
+                <p class="acuse__nota">
+                  Queda pendiente de que la casa la confirme. Te avisaremos al
+                  {{ r.telefono }} o a {{ r.email }}.
+                </p>
+                <p class="acuse__aviso">
+                  Esto es una maqueta: la petición se guarda en este navegador y todavía
+                  no llega al restaurante. Para reservar en firme, llámanos.
+                </p>
+                <button type="button" class="boton boton--claro" (click)="otra()">
+                  Pedir otra
+                </button>
+              </div>
+            } @else {
+              <form class="formulario" (ngSubmit)="enviar()">
                 <label class="campo">
-                  <span>Nombre</span>
+                  <span>Nombre y apellido</span>
                   <input name="nombre" [(ngModel)]="nombre" required autocomplete="name" />
                 </label>
+
+                <div class="fila fila--dos">
+                  <label class="campo">
+                    <span>Teléfono</span>
+                    <input
+                      type="tel"
+                      name="telefono"
+                      inputmode="tel"
+                      [(ngModel)]="telefono"
+                      required
+                      autocomplete="tel"
+                    />
+                  </label>
+                  <label class="campo">
+                    <span>Correo</span>
+                    <input
+                      type="email"
+                      name="email"
+                      inputmode="email"
+                      [(ngModel)]="email"
+                      required
+                      autocomplete="email"
+                    />
+                  </label>
+                </div>
+
+                <div class="fila fila--cuando">
+                  <label class="campo">
+                    <span>Día</span>
+                    <input type="date" name="dia" [min]="minimo" [(ngModel)]="dia" required />
+                  </label>
+                  <label class="campo">
+                    <span>Hora</span>
+                    <input type="time" name="hora" [(ngModel)]="hora" required />
+                  </label>
+                  <label class="campo">
+                    <span>Personas</span>
+                    <input
+                      type="number"
+                      name="personas"
+                      inputmode="numeric"
+                      min="1"
+                      max="100"
+                      [(ngModel)]="personas"
+                      required
+                    />
+                  </label>
+                </div>
+
                 <label class="campo">
-                  <span>Teléfono</span>
-                  <input name="telefono" [(ngModel)]="telefono" required autocomplete="tel" />
+                  <span>Comentario</span>
+                  <textarea
+                    name="comentario"
+                    [(ngModel)]="comentario"
+                    placeholder="Alergias, trona, celebración..."
+                  ></textarea>
                 </label>
-              </div>
 
-              <div class="formulario__fila">
-                <label class="campo">
-                  <span>Día</span>
-                  <input type="date" name="dia" [(ngModel)]="dia" required />
-                </label>
-                <label class="campo">
-                  <span>Hora</span>
-                  <input type="time" name="hora" [(ngModel)]="hora" required />
-                </label>
-                <label class="campo campo--corto">
-                  <span>Personas</span>
-                  <input type="number" name="personas" min="1" max="100" [(ngModel)]="personas" />
-                </label>
-              </div>
+                <button type="submit" class="boton" [disabled]="!completo()">
+                  Pedir reserva
+                </button>
 
-              <label class="campo">
-                <span>Comentario</span>
-                <textarea
-                  name="comentario"
-                  [(ngModel)]="comentario"
-                  placeholder="Alergias, trona, celebración..."
-                ></textarea>
-              </label>
-
-              <button type="submit" class="boton" [disabled]="!completo()">
-                {{ enviado() ? '¡Gracias! Te llamamos' : 'Pedir reserva' }}
-              </button>
-
-              @if (enviado()) {
-                <p class="apunte" role="status">
-                  Esto es una maqueta: todavía no hay servidor detrás, así que la petición
-                  no sale del navegador. Para reservar en firme, llámanos o escríbenos por
-                  WhatsApp.
+                <p class="apunte">
+                  Todos los campos son obligatorios salvo el comentario. El correo lo
+                  usamos solo para confirmarte la mesa.
                 </p>
-              }
-            </form>
+              </form>
+            }
           </div>
 
           <!-- Datos de la casa ------------------------------------------- -->
@@ -150,13 +197,25 @@ import { Revelar } from '../shared/revelar';
 
     .formulario { display: flex; flex-direction: column; gap: 16px; }
 
-    .formulario__fila {
+    /* Las filas arrancan en una sola columna y solo se abren cuando hay sitio.
+
+       Se usa «minmax(0, 1fr)» y no «1fr» a secas: los campos de fecha y hora
+       traen un ancho minimo propio grande, y como los hijos de una rejilla no
+       encogen por debajo de su contenido, dos de ellos en la misma fila
+       ensanchaban la rejilla, se montaban entre si y empujaban la pagina a lo
+       ancho. El minimo en cero les deja encogerse. */
+    .fila {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 14px;
     }
 
-    .campo--corto { max-width: 160px; }
+    /* Dia, hora y personas: en movil el dia se lleva la fila entera y debajo
+       van la hora y el numero de comensales, que son cortos. */
+    .fila--cuando { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fila--cuando > :first-child { grid-column: 1 / -1; }
+
+    .campo { min-width: 0; }
 
     /* Los campos van sobre fondo oscuro: se invierte la piel clara del
        sistema para que no den un salto de brillo en medio del panel. */
@@ -164,6 +223,7 @@ import { Revelar } from '../shared/revelar';
 
     .campo input,
     .campo textarea {
+      min-width: 0;
       background: rgba(255, 255, 255, .06);
       border-color: rgba(255, 255, 255, .16);
       color: var(--arena);
@@ -184,6 +244,34 @@ import { Revelar } from '../shared/revelar';
       opacity: .5;
       max-width: 46ch;
     }
+
+    /* ---- Acuse de recibo ----------------------------------------------- */
+
+    .acuse {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 26px 24px;
+      border-radius: var(--pastilla);
+      background: rgba(226, 112, 30, .14);
+      border: 1px solid rgba(226, 112, 30, .4);
+    }
+
+    .acuse__titulo {
+      margin: 0;
+      font-family: Anton, sans-serif;
+      font-size: 24px;
+      text-transform: uppercase;
+      color: var(--naranja);
+    }
+
+    .acuse__resumen { margin: 0; font-size: 15px; line-height: 1.55; }
+
+    .acuse__nota { margin: 0; font-size: 13px; line-height: 1.55; opacity: .75; }
+
+    .acuse__aviso { margin: 0; font-size: 11px; line-height: 1.6; opacity: .5; }
+
+    .acuse .boton { align-self: flex-start; margin-top: 6px; }
 
     /* ---- Datos --------------------------------------------------------- */
 
@@ -231,7 +319,7 @@ import { Revelar } from '../shared/revelar';
 
     .mosaico {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       margin-top: 30px;
 
@@ -254,6 +342,12 @@ import { Revelar } from '../shared/revelar';
       opacity: .35;
     }
 
+    @media (min-width: 620px) {
+      .fila--dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .fila--cuando { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .fila--cuando > :first-child { grid-column: auto; }
+    }
+
     @media (min-width: 900px) {
       .columnas { grid-template-columns: 1.1fr .9fr; gap: 60px; }
     }
@@ -261,24 +355,48 @@ import { Revelar } from '../shared/revelar';
 })
 export class ReservarPage {
   private readonly servicio = inject(CatalogoService);
+  private readonly reservas = inject(ReservasService);
 
   readonly restaurante = this.servicio.restaurante;
   readonly hoy = new Date().getFullYear();
 
+  /** No se puede reservar para ayer. */
+  readonly minimo = hoyIso();
+
   readonly nombre = signal('');
   readonly telefono = signal('');
+  readonly email = signal('');
   readonly dia = signal('');
   readonly hora = signal('');
   readonly personas = signal<number | null>(2);
   readonly comentario = signal('');
-  readonly enviado = signal(false);
+
+  /** La reserva recien pedida; mientras exista, en su sitio va el acuse. */
+  readonly enviada = signal<{
+    nombre: string;
+    telefono: string;
+    email: string;
+    dia: string;
+    hora: string;
+    personas: number;
+  } | null>(null);
 
   readonly completo = computed(
-    () => !!this.nombre().trim() && !!this.telefono().trim() && !!this.dia() && !!this.hora(),
+    () =>
+      !!this.nombre().trim() &&
+      !!this.telefono().trim() &&
+      !!this.email().trim() &&
+      !!this.dia() &&
+      !!this.hora() &&
+      (this.personas() ?? 0) > 0,
   );
 
   /** Seis fotos de la galeria como retrato del comedor. */
   readonly mosaico = computed(() => this.servicio.galeria().slice(0, 6));
+
+  diaLargo(iso: string): string {
+    return fechaLarga(iso);
+  }
 
   telefonoBonito(): string {
     return this.restaurante().telefono.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
@@ -290,7 +408,29 @@ export class ReservarPage {
 
   enviar(): void {
     if (!this.completo()) return;
-    // Sin backend todavia: se acusa recibo y se recuerda el canal real.
-    this.enviado.set(true);
+
+    const reserva = this.reservas.crear({
+      nombre: this.nombre().trim(),
+      telefono: this.telefono().trim(),
+      email: this.email().trim(),
+      dia: this.dia(),
+      hora: this.hora(),
+      personas: Number(this.personas()),
+      comentario: this.comentario().trim() || null,
+    });
+
+    this.enviada.set(reserva);
+  }
+
+  /** Vuelve al formulario en blanco para pedir otra mesa. */
+  otra(): void {
+    this.enviada.set(null);
+    this.nombre.set('');
+    this.telefono.set('');
+    this.email.set('');
+    this.dia.set('');
+    this.hora.set('');
+    this.personas.set(2);
+    this.comentario.set('');
   }
 }

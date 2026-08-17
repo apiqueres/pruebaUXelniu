@@ -41,10 +41,37 @@ arrancar y la deja en un signal del que leen todas las páginas. Lo que edita el
 administrador se guarda en `localStorage` bajo la clave `niu.catalogo.v1`; el
 botón «Restaurar» del panel lo borra y vuelve a la semilla.
 
+## Las reservas
+
+El cliente pide mesa desde `/reservar` dejando nombre, teléfono, correo, día,
+hora y número de personas (todo obligatorio salvo el comentario). La petición
+nace **pendiente** y no ocupa sitio hasta que la casa la acepta.
+
+En el panel, la pestaña **Reservas** muestra:
+
+- Las **peticiones por confirmar**, en naranja y por orden de llegada, con
+  botones de confirmar y rechazar. La pestaña lleva un contador para que se
+  vean sin entrar.
+- Un **calendario mensual**: los días con mesa aceptada salen en naranja con el
+  número de comensales, y al pulsarlos aparece abajo el detalle de cada reserva
+  con su teléfono, correo y observaciones. «Anular» devuelve la reserva a la
+  cola de pendientes en vez de borrarla.
+- **Imprimir o guardar en PDF** del día, la semana o el mes, tomando como
+  referencia el día elegido en el calendario. Sale por el diálogo de impresión
+  del navegador, eligiendo «Guardar como PDF» como destino.
+
+Se guardan en `localStorage` bajo `niu.reservas.v1`, aparte del catálogo, para
+que restaurar la carta no borre las reservas.
+
+Falta el aviso por correo a la casa cuando entra una petición: necesita
+servidor.
+
 ## El panel de administración
 
-En `/admin`, con tres pestañas:
+En `/admin`, con cuatro pestañas:
 
+- **Reservas** — lo descrito arriba. Es la pestaña que se abre por defecto,
+  porque las peticiones caducan y los platos no.
 - **Platos y bebidas** — alta, edición y borrado, con buscador y filtros por
   carta y categoría. Se puede ocultar un plato sin borrarlo y marcarlo como
   destacado de portada.

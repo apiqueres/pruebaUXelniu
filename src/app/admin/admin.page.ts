@@ -2,15 +2,17 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CatalogoService } from '../core/catalogo.service';
+import { ReservasService } from '../core/reservas.service';
 import { AdminProductos } from './admin-productos';
 import { AdminMenus } from './admin-menus';
 import { AdminCategorias } from './admin-categorias';
+import { AdminReservas } from './admin-reservas';
 
-type Pestana = 'productos' | 'menus' | 'categorias';
+type Pestana = 'reservas' | 'productos' | 'menus' | 'categorias';
 
 @Component({
   selector: 'niu-admin',
-  imports: [RouterLink, AdminProductos, AdminMenus, AdminCategorias],
+  imports: [RouterLink, AdminProductos, AdminMenus, AdminCategorias, AdminReservas],
   template: `
     <div class="admin">
       <header class="barra-admin">
@@ -31,6 +33,11 @@ type Pestana = 'productos' | 'menus' | 'categorias';
               (click)="pestana.set(p.id)"
             >
               {{ p.etiqueta }}
+              <!-- Las peticiones sin resolver se cantan desde la pestaña, para
+                   que no haga falta entrar a mirar si hay algo esperando. -->
+              @if (p.id === 'reservas' && pendientes().length) {
+                <span class="aviso">{{ pendientes().length }}</span>
+              }
             </button>
           }
         </nav>
@@ -47,6 +54,7 @@ type Pestana = 'productos' | 'menus' | 'categorias';
 
       <main class="lienzo">
         @switch (pestana()) {
+          @case ('reservas') { <niu-admin-reservas /> }
           @case ('productos') { <niu-admin-productos /> }
           @case ('menus') { <niu-admin-menus /> }
           @case ('categorias') { <niu-admin-categorias /> }
@@ -127,6 +135,22 @@ type Pestana = 'productos' | 'menus' | 'categorias';
 
     .pestana--activa { background: var(--arena); color: var(--tinta); }
 
+    .aviso {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 17px;
+      height: 17px;
+      margin-left: 7px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--naranja);
+      color: var(--blanco);
+      font-size: 9px;
+      letter-spacing: 0;
+      vertical-align: middle;
+    }
+
     .restaurar { color: var(--arena); padding: 11px 18px; }
 
     .apunte {
@@ -147,11 +171,18 @@ type Pestana = 'productos' | 'menus' | 'categorias';
 export class AdminPage {
   private readonly servicio = inject(CatalogoService);
 
+  private readonly reservasServicio = inject(ReservasService);
+
   readonly restaurante = this.servicio.restaurante;
-  readonly pestana = signal<Pestana>('productos');
+  readonly pendientes = this.reservasServicio.pendientes;
+
+  /* Se abre por reservas y no por la carta: las peticiones caducan y los
+     platos no. */
+  readonly pestana = signal<Pestana>('reservas');
   readonly confirmandoRestaurar = signal(false);
 
   readonly pestanas: { id: Pestana; etiqueta: string }[] = [
+    { id: 'reservas', etiqueta: 'Reservas' },
     { id: 'productos', etiqueta: 'Platos y bebidas' },
     { id: 'menus', etiqueta: 'Menús' },
     { id: 'categorias', etiqueta: 'Categorías' },

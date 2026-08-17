@@ -362,6 +362,114 @@ img { max-width: 100%; }
   .admin-fila__acciones { margin-left: auto; }
 }
 
+/* ---- Hoja de reservas para imprimir --------------------------------------
+
+   El listado de reservas se lleva al papel (o a un PDF, eligiendo «Guardar
+   como PDF» en el destino del dialogo) por la propia impresion del navegador,
+   sin libreria de por medio: asi sale con las tipografias reales y funciona
+   igual en el ordenador de la barra que en el movil.
+
+   En pantalla la hoja no existe. Al imprimir se esconde todo lo demas con
+   `visibility` en vez de con `display`, que es lo unico que garantiza que no
+   quede una primera pagina en blanco donde estaba el panel. */
+
+.impresion { display: none; }
+
+@media print {
+  body * { visibility: hidden; }
+
+  .impresion,
+  .impresion * { visibility: visible; }
+
+  .impresion {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    color: #000;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11pt;
+  }
+
+  .ruido { display: none !important; }
+
+  @page { margin: 14mm; }
+
+  .impresion__cabecera {
+    margin-bottom: 10mm;
+    padding-bottom: 4mm;
+    border-bottom: 1.5pt solid #000;
+
+    h1 {
+      margin: 0;
+      font-family: Anton, sans-serif;
+      font-size: 20pt;
+      text-transform: uppercase;
+    }
+  }
+
+  .impresion__rango {
+    margin: 2mm 0 0;
+    font-size: 12pt;
+    font-weight: 700;
+  }
+
+  .impresion__totales {
+    margin: 1mm 0 0;
+    font-size: 10pt;
+  }
+
+  /* Cada jornada entera en la misma pagina siempre que quepa. */
+  .impresion__dia {
+    margin-bottom: 8mm;
+    break-inside: avoid;
+
+    h2 {
+      margin: 0 0 3mm;
+      font-size: 12pt;
+      text-transform: capitalize;
+      border-bottom: .5pt solid #999;
+      padding-bottom: 1.5mm;
+    }
+  }
+
+  .impresion table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+
+  .impresion th {
+    text-align: left;
+    font-size: 8pt;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 1.5mm 2mm 1.5mm 0;
+    border-bottom: .5pt solid #000;
+  }
+
+  .impresion td {
+    padding: 2mm 2mm 2mm 0;
+    border-bottom: .25pt solid #ccc;
+    vertical-align: top;
+  }
+
+  /* La cabecera se repite si la tabla parte en dos paginas. */
+  .impresion thead { display: table-header-group; }
+  .impresion tr { break-inside: avoid; }
+
+  .impresion__vacio { font-size: 11pt; font-style: italic; }
+
+  .impresion__pie {
+    margin-top: 10mm;
+    padding-top: 3mm;
+    border-top: .5pt solid #999;
+    font-size: 8pt;
+  }
+}
+
 /* ---- Utilidad ------------------------------------------------------------ */
 
 .oculto-visual {

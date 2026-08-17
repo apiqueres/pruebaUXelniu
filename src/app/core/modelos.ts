@@ -84,6 +84,35 @@ export interface Restaurante {
   horarios: Horario[];
 }
 
+/* ---- Reservas -------------------------------------------------------------
+
+   Una reserva nace «pendiente» cuando la pide un cliente desde la web y no
+   ocupa mesa hasta que la casa la confirma. Las rechazadas se conservan para
+   poder mirar atras y para no perder el telefono de quien se quedo fuera. */
+
+export type EstadoReserva = 'pendiente' | 'confirmada' | 'rechazada';
+
+export interface Reserva {
+  id: string;
+  nombre: string;
+  telefono: string;
+  email: string;
+  /** Dia en formato «AAAA-MM-DD», tal cual lo da el <input type="date">. */
+  dia: string;
+  /** Hora en formato «HH:MM». */
+  hora: string;
+  personas: number;
+  comentario: string | null;
+  estado: EstadoReserva;
+  /** Fecha ISO en que el cliente la pidio. */
+  creada: string;
+  /** Fecha ISO en que la casa la confirmo o la rechazo. */
+  resuelta: string | null;
+}
+
+/** Lo que manda el formulario de la web; el resto lo pone el servicio. */
+export type PeticionReserva = Omit<Reserva, 'id' | 'estado' | 'creada' | 'resuelta'>;
+
 export interface Catalogo {
   restaurante: Restaurante;
   categorias: Categoria[];
