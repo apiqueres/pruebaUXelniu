@@ -94,5 +94,13 @@ main { display: block; }
 
   .cabecera { padding: 12px 12px; }
   .cabecera__acciones .boton { height: 34px; padding: 0 13px; font-size: 9px; }
-  .marca { font-size: 13px; }
+
+  /* En movil la cabecera se queda solo con las dos acciones. El rotulo
+     «—EL NIU» sobraba: el logo ya preside la portada y para volver al inicio
+     esta el primer boton de la barra de abajo.
+
+     Al quedarse un unico hijo, el `space-between` lo pegaria a la izquierda;
+     el margen automatico lo devuelve a su esquina. */
+  .marca { display: none; }
+  .cabecera__acciones { margin-left: auto; }
 }

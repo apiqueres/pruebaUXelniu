@@ -2154,9 +2154,54 @@
         "Bebida incluida",
         "Pan"
       ],
-      "apartados": [],
-      "imagen": "menus/menu-diario-finde.png",
+      "apartados": [
+        {
+          "titulo": "1º a elegir",
+          "opciones": [
+            "Puntilla rebozada",
+            "Ensalada con pollo crujiente, queso roquefort y frutos secos, aliñada con vinagreta de miel-mostaza",
+            "Patatas al roquefort",
+            "Croquetas de carrillada y boletus con mayonesa de trufa (3 u.)",
+            "Raviolis crujientes de rabo de toro con salsa de mango y parmentier trufado (2 u.)",
+            "Crêpe de vieira y gambas con salsa de marisco",
+            "Ensaladilla «Rusamole» (con guacamole y kikos)",
+            "Berenjena a la miel",
+            "Queso camembert rebozado con mermelada de arándanos",
+            "Salteado de verduritas con salsa romescu y crujiente de jamón"
+          ]
+        },
+        {
+          "titulo": "2º a elegir",
+          "opciones": [
+            "Lasaña de verduras y gambas",
+            "Lomo de lubina con calamares",
+            "Carrillada ibérica confitada al vino tinto",
+            "Merluza con salsa de marisco",
+            "Crujiente de pollo al curry",
+            "Espaguetis al pesto",
+            "Pizza a elegir (york y queso · barbacoa · 7 quesos · bacon y champiñones)",
+            "Arroz meloso de 3 secretos",
+            "Arroz meloso del «senyoret»",
+            "Arroz meloso de chipirones en su tinta y ajetes",
+            "Tosta de berenjena escalibada con miel y un toque de sobrasada, parmesano y frutos secos",
+            "Solomillo ibérico a la pimienta verde"
+          ]
+        },
+        {
+          "titulo": "Postre y bebida",
+          "opciones": [
+            "Postre casero a elegir o café",
+            "Primera bebida incluida",
+            "Un servicio de pan con tomate",
+            "Empezamos con aperitivo de la casa",
+            "Granizado de limón entre platos"
+          ]
+        }
+      ],
+      "imagen": null,
       "condiciones": [
+        "Un plato a elegir de cada apartado.",
+        "Medio menú (un solo plato): 12,50 €. Con dos segundos: +2 €.",
         "Los platos cambian cada semana. Consúltenos los del día."
       ],
       "especial": false,
@@ -2173,7 +2218,7 @@
         "Bebida no incluida"
       ],
       "apartados": [],
-      "imagen": "menus/menu-diario-finde.png",
+      "imagen": null,
       "condiciones": [
         "Recomendamos reservar con antelación, sobre todo en temporada alta."
       ],
@@ -2192,7 +2237,7 @@
         "Horarios flexibles de mediodía y noche"
       ],
       "apartados": [],
-      "imagen": "eventos/empresas.jpg",
+      "imagen": null,
       "condiciones": [
         "Escríbanos por WhatsApp con el número de personas y la fecha y le enviamos la propuesta."
       ],
@@ -2259,7 +2304,7 @@
       "precioNota": "a consultar",
       "incluye": [],
       "apartados": [],
-      "imagen": "eventos/comuniones.jpg",
+      "imagen": null,
       "condiciones": [],
       "especial": true,
       "activo": true
@@ -2285,7 +2330,7 @@
       "precioNota": "a consultar",
       "incluye": [],
       "apartados": [],
-      "imagen": "galeria/paella.jpg",
+      "imagen": null,
       "condiciones": [],
       "especial": true,
       "activo": true

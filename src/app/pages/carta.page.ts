@@ -4,13 +4,12 @@ import { ActivatedRoute } from '@angular/router';
 
 import { CatalogoService } from '../core/catalogo.service';
 import type { TipoCategoria } from '../core/modelos';
-import { FotoPipe } from '../shared/foto.pipe';
 import { PrecioPipe } from '../shared/precio.pipe';
 import { Revelar } from '../shared/revelar';
 
 @Component({
   selector: 'niu-carta',
-  imports: [FotoPipe, PrecioPipe, Revelar],
+  imports: [PrecioPipe, Revelar],
   template: `
     <section class="hoja hoja--carta">
       <div class="contenido contenido--estrecho">
@@ -69,16 +68,12 @@ import { Revelar } from '../shared/revelar';
 
               <ul class="platos">
                 @for (p of g.platos; track p.id) {
+                  <!-- La carta va sin fotos a peticion del cliente: se lee
+                       como una carta de papel. Las imagenes siguen guardadas
+                       en cada plato (y se ven en los destacados de la
+                       portada), asi que volver a sacarlas aqui es reponer el
+                       <img> que habia en este punto. -->
                   <li class="plato">
-                    @if (p.imagen) {
-                      <img
-                        class="plato__foto"
-                        [src]="p.imagen | foto"
-                        [alt]="p.nombre"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    }
                     <div class="plato__texto plato__texto--crece">
                       <div class="plato__nombre">
                         {{ p.nombre }}
@@ -228,21 +223,10 @@ import { Revelar } from '../shared/revelar';
       gap: 18px;
     }
 
-    /* Flex y no grid: hay platos con foto y platos sin ella, y una columna
-       vacia dejaria a los segundos con una sangria fantasma. */
     .plato {
       display: flex;
       align-items: baseline;
       gap: 12px;
-    }
-
-    .plato__foto {
-      flex: none;
-      align-self: center;
-      width: 58px;
-      height: 58px;
-      border-radius: 18px;
-      object-fit: cover;
     }
 
     .plato__texto { min-width: 0; }
@@ -308,7 +292,6 @@ import { Revelar } from '../shared/revelar';
 
     @media (min-width: 720px) {
       .grupo { padding: 34px 34px; }
-      .plato__foto { width: 72px; height: 72px; border-radius: 22px; }
       .plato__nombre { font-size: 15px; }
       .plato__descripcion { font-size: 13px; }
       .plato__precio { font-size: 19px; }

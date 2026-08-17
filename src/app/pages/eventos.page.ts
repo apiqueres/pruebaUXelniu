@@ -126,6 +126,12 @@ import { Revelar } from '../shared/revelar';
     }
 
     .llamada__acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    /* Igual que en la portada: en movil la foto acompaña, no manda. */
+    @media (max-width: 520px) {
+      .evento__foto { aspect-ratio: 16 / 9; border-radius: 1.8rem; }
+      .rejilla { gap: 16px; margin-top: 30px; }
+    }
   `,
 })
 export class EventosPage {

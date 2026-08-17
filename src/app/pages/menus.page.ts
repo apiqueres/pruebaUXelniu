@@ -2,13 +2,19 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CatalogoService } from '../core/catalogo.service';
-import { FotoPipe } from '../shared/foto.pipe';
 import { PrecioPipe } from '../shared/precio.pipe';
 import { Revelar } from '../shared/revelar';
 
+/* Los menus van escritos, como la carta de papel que se deja en la mesa: sin
+   la foto del cartel y sin la pastilla de precio al lado del titulo. Cada uno
+   se lee de arriba abajo y cierra con lo que cuesta.
+
+   El menu de empresas se queda tal cual estaba (disponibilidad, lo que incluye
+   y la condicion de pedirlo por WhatsApp); lo unico que ha perdido es la foto,
+   igual que el resto. */
 @Component({
   selector: 'niu-menus',
-  imports: [RouterLink, FotoPipe, PrecioPipe, Revelar],
+  imports: [RouterLink, PrecioPipe, Revelar],
   template: `
     <section class="hoja hoja--menus">
       <div class="contenido contenido--estrecho">
@@ -18,44 +24,53 @@ import { Revelar } from '../shared/revelar';
         <div class="lista">
           @for (m of fijos(); track m.id; let i = $index) {
             <article class="menu" [revelar]="i * 70">
-              @if (m.imagen) {
-                <img class="menu__foto" [src]="m.imagen | foto" [alt]="m.nombre" loading="lazy" />
+              <header class="menu__cabecera">
+                <h2 class="menu__nombre">{{ m.nombre }}</h2>
+                <p class="menu__cuando etiqueta">{{ m.disponibilidad }}</p>
+              </header>
+
+              @if (m.incluye.length) {
+                <ul class="incluye">
+                  @for (x of m.incluye; track x) {
+                    <li>{{ x }}</li>
+                  }
+                </ul>
               }
 
-              <div class="menu__cuerpo">
-                <div class="menu__encabezado">
-                  <div>
-                    <h2 class="menu__nombre">{{ m.nombre }}</h2>
-                    <p class="menu__cuando etiqueta">{{ m.disponibilidad }}</p>
-                  </div>
-                  <div class="menu__precio">
-                    {{ m.precio | precio: m.precioNota ?? 'A consultar' }}
-                  </div>
+              @if (m.apartados.length) {
+                <div class="apartados">
+                  @for (a of m.apartados; track a.titulo) {
+                    <section class="apartado">
+                      <h3 class="apartado__titulo etiqueta">{{ a.titulo }}</h3>
+                      <ul class="apartado__opciones">
+                        @for (o of a.opciones; track o) {
+                          <li>{{ o }}</li>
+                        }
+                      </ul>
+                    </section>
+                  }
                 </div>
+              }
 
-                @if (m.incluye.length) {
-                  <ul class="incluye">
-                    @for (x of m.incluye; track x) {
-                      <li>{{ x }}</li>
-                    }
-                  </ul>
-                }
-
-                @for (a of m.apartados; track a.titulo) {
-                  <div class="apartado">
-                    <div class="apartado__titulo etiqueta">{{ a.titulo }}</div>
-                    <div class="apartado__opciones">
-                      @for (o of a.opciones; track o) {
-                        <div>{{ o }}</div>
-                      }
-                    </div>
-                  </div>
-                }
-
-                @for (c of m.condiciones; track c) {
-                  <p class="menu__condicion">{{ c }}</p>
+              <!-- El precio cierra el menu, como en la carta impresa. Cuando
+                   no lo hay (el de empresas se cierra con cada grupo) manda el
+                   texto, y no una cifra grande en blanco. -->
+              <div class="precio">
+                @if (m.precio !== null) {
+                  <span class="precio__cifra">{{ m.precio | precio }}</span>
+                  <span class="precio__nota">{{ m.disponibilidad }}</span>
+                } @else {
+                  <span class="precio__texto">{{ m.precioNota || 'A consultar' }}</span>
                 }
               </div>
+
+              @if (m.condiciones.length) {
+                <ul class="condiciones">
+                  @for (c of m.condiciones; track c) {
+                    <li>{{ c }}</li>
+                  }
+                </ul>
+              }
             </article>
           }
         </div>
@@ -95,48 +110,34 @@ import { Revelar } from '../shared/revelar';
     .lista {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
       margin-top: 30px;
     }
 
     .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      padding: 24px;
+      padding: 28px 24px;
       border-radius: var(--pastilla);
       background: var(--arena-media);
     }
 
-    .menu__foto {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      border-radius: 1.6rem;
-    }
-
-    .menu__cuerpo { flex: 1; min-width: 0; }
-
-    .menu__encabezado {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
+    .menu__cabecera {
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(46, 46, 46, .14);
     }
 
     .menu__nombre {
       margin: 0;
       font-family: Anton, sans-serif;
-      font-size: clamp(20px, 4vw, 28px);
+      font-size: clamp(22px, 5vw, 32px);
       line-height: 1.05;
       text-transform: uppercase;
     }
 
-    .menu__cuando { display: block; margin-top: 8px; opacity: .55; }
+    .menu__cuando { margin: 8px 0 0; opacity: .55; }
 
     .incluye {
       list-style: none;
-      margin: 16px 0 0;
+      margin: 18px 0 0;
       padding: 0;
       display: flex;
       flex-direction: column;
@@ -162,46 +163,85 @@ import { Revelar } from '../shared/revelar';
       }
     }
 
-    .apartado { margin-top: 18px; }
-
-    .apartado__titulo {
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(46, 46, 46, .14);
-      opacity: .45;
+    /* Los apartados del menu del dia: primeros, segundos y postre. */
+    .apartados {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 26px;
+      margin-top: 26px;
     }
 
-    .apartado__opciones {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding-top: 12px;
-      font-size: 13px;
-      line-height: 1.45;
+    .apartado__titulo {
+      margin: 0 0 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(46, 46, 46, .14);
+      color: var(--naranja);
       opacity: .85;
     }
 
-    .menu__condicion {
-      margin: 14px 0 0;
-      font-size: 11px;
-      line-height: 1.6;
-      opacity: .5;
-      max-width: 52ch;
+    .apartado__opciones {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+
+      li {
+        font-size: 13px;
+        line-height: 1.45;
+        opacity: .85;
+        text-wrap: pretty;
+      }
     }
 
-    .menu__precio {
-      flex: none;
+    .precio {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 74px;
-      height: 74px;
-      padding: 0 18px;
-      border-radius: 999px;
-      background: var(--naranja);
-      color: var(--blanco);
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 14px;
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(46, 46, 46, .14);
+    }
+
+    .precio__cifra {
       font-family: Anton, sans-serif;
-      font-size: 20px;
-      white-space: nowrap;
+      font-size: clamp(30px, 7vw, 42px);
+      line-height: 1;
+      color: var(--naranja);
+    }
+
+    .precio__nota {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      opacity: .5;
+    }
+
+    .precio__texto {
+      font-family: Anton, sans-serif;
+      font-size: clamp(20px, 4vw, 26px);
+      line-height: 1;
+      text-transform: uppercase;
+      color: var(--naranja);
+    }
+
+    .condiciones {
+      list-style: none;
+      margin: 16px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+      li {
+        font-size: 11px;
+        line-height: 1.6;
+        opacity: .5;
+        max-width: 56ch;
+      }
     }
 
     /* ---- Temporada ---------------------------------------------------- */
@@ -261,12 +301,9 @@ import { Revelar } from '../shared/revelar';
       margin-top: 26px;
     }
 
-    /* En pantalla ancha la foto se pone al lado del texto en vez de encima:
-       asi el menu ocupa menos alto y se ven varios de un vistazo. */
-    @media (min-width: 720px) {
-      .menu { flex-direction: row; align-items: stretch; gap: 26px; padding: 28px; }
-      .menu__foto { width: 230px; aspect-ratio: 3 / 4; align-self: stretch; height: auto; }
-      .menu__precio { min-width: 84px; height: 84px; font-size: 22px; }
+    @media (min-width: 760px) {
+      .menu { padding: 34px 34px; }
+      .apartados { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
     }
   `,
 })

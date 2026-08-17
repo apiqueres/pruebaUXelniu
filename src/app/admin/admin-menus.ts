@@ -51,10 +51,8 @@ import { PrecioPipe } from '../shared/precio.pipe';
           <textarea name="condiciones" [(ngModel)]="fCondiciones"></textarea>
         </label>
 
-        <label class="campo">
-          <span>Imagen</span>
-          <input name="imagen" placeholder="menus/menu-diario.jpg" [(ngModel)]="fImagen" />
-        </label>
+        <!-- Sin campo de imagen: la pagina de menus va escrita, sin fotos. El
+             dato sigue en el modelo por si se recupera. -->
 
         <div class="admin-interruptores">
           <label class="admin-interruptor">

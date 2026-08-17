@@ -399,6 +399,13 @@ import { Revelar } from '../shared/revelar';
     @media (max-width: 520px) {
       .circulo { width: 74px; height: 74px; font-size: 8px; }
       .titulo-fila { margin-bottom: 26px; }
+
+      /* Las fotos pierden protagonismo en el movil. En vertical, el 4/5 de
+         escritorio se comia casi media pantalla por plato y obligaba a
+         desfilar seis pantallazos de foto antes de llegar a nada mas. */
+      .ficha__foto { aspect-ratio: 16 / 10; border-radius: 1.8rem; }
+      .casa__foto img { aspect-ratio: 16 / 10; border-radius: 1.8rem; }
+      .rejilla { gap: 14px; }
     }
   `,
 })
