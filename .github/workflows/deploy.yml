@@ -1,0 +1,54 @@
+name: Publicar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Si se empujan dos commits seguidos, que el segundo espere al primero en vez
+# de cancelarlo: asi la web publicada nunca se queda a medias.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # La web no cuelga de la raiz del dominio sino de /pruebaUXelniu/, y sin
+      # este base-href el index pediria los scripts y las fotos a la raiz.
+      - run: npm run build -- --base-href "/${{ github.event.repository.name }}/"
+
+      # Pages sirve ficheros estaticos y no sabe de rutas de Angular: al abrir
+      # /carta directamente o al recargar buscaria un carta.html que no existe.
+      # Con el index duplicado como 404.html, esas peticiones caen igualmente
+      # en la aplicacion y el router se encarga.
+      - run: cp dist/elniu-app/browser/index.html dist/elniu-app/browser/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/elniu-app/browser
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - id: pages
+        uses: actions/deploy-pages@v4

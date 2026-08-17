@@ -1,0 +1,375 @@
+/* Sistema de diseno del Niu.
+   Los colores, la tipografia y las formas vienen de la maqueta estatica; aqui
+   se convierten en tokens para que todas las paginas hablen el mismo idioma. */
+
+:root {
+  --arena: #dedbd6;
+  --arena-media: #eceae7;
+  --arena-clara: #f7f5f2;
+  --tinta: #2e2e2e;
+  --naranja: #e2701e;
+  --blanco: #ffffff;
+
+  --curva: 5rem;      // radio superior de los paneles de seccion
+  --pastilla: 2.5rem; // radio de las tarjetas interiores
+  --suave: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Alto reservado abajo para que el nav flotante no tape el contenido. */
+  --hueco-nav: 104px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--arena);
+  color: var(--tinta);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a { color: inherit; text-decoration: none; }
+
+img { max-width: 100%; }
+
+/* ---- Tipografia ---------------------------------------------------------- */
+
+/* El titular gigante de cada seccion. En la maqueta era 15vw fijo, que en un
+   monitor ancho se comia la pantalla; con clamp crece hasta un tope legible. */
+.titular {
+  margin: 0;
+  font-family: Anton, sans-serif;
+  font-size: clamp(2.75rem, 12vw, 9rem);
+  line-height: .82;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.antetitulo {
+  margin: 0 0 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .4em;
+  text-transform: uppercase;
+  opacity: .55;
+}
+
+.etiqueta {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.entradilla {
+  font-size: clamp(15px, 1.6vw, 18px);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* ---- Piezas reutilizables ------------------------------------------------ */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  cursor: pointer;
+  padding: 15px 24px;
+  border-radius: 999px;
+  font-family: Inter, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  background: var(--naranja);
+  color: var(--blanco);
+  transition: transform .4s var(--suave), opacity .2s;
+
+  &:hover { transform: translateY(-2px); }
+  &:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+}
+
+.boton--claro { background: var(--blanco); color: var(--tinta); }
+.boton--oscuro { background: var(--tinta); color: var(--blanco); }
+.boton--linea { background: transparent; border: 1px solid currentColor; }
+
+.panel {
+  padding: 26px 22px;
+  border-radius: var(--pastilla);
+  background: var(--arena-clara);
+}
+
+/* Panel de seccion: la forma con las esquinas superiores redondeadas que hace
+   que cada pagina parezca una hoja apoyada sobre la anterior. */
+.hoja {
+  position: relative;
+  border-radius: var(--curva) var(--curva) 0 0;
+  padding: clamp(40px, 7vw, 80px) 16px calc(var(--hueco-nav) + 40px);
+  min-height: 100svh;
+}
+
+.contenido {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.contenido--estrecho { max-width: 900px; }
+
+/* ---- Ruido ---------------------------------------------------------------- */
+
+.ruido {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: .04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- Entradas ------------------------------------------------------------ */
+
+@keyframes subir {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Escalonado de la entrada de una pagina: se aplica al panel y a sus hijos
+   directos marcados, para que el contenido no aparezca de golpe. */
+.entra { animation: subir .7s var(--suave) both; }
+.entra-1 { animation: subir .7s var(--suave) .06s both; }
+.entra-2 { animation: subir .7s var(--suave) .12s both; }
+.entra-3 { animation: subir .7s var(--suave) .18s both; }
+
+/* Revelado al hacer scroll, lo pone la directiva `revelar`. */
+[data-revelar] { opacity: 0; transform: translateY(46px); }
+[data-revelar].visible {
+  opacity: 1;
+  transform: none;
+  transition: opacity .9s var(--suave), transform .9s var(--suave);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .entra, .entra-1, .entra-2, .entra-3 { animation: none; }
+  [data-revelar] { opacity: 1; transform: none; transition: none; }
+}
+
+/* ---- Formularios (los usa sobre todo el panel de administracion) --------- */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  > span {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    opacity: .55;
+  }
+
+  input, textarea, select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(46, 46, 46, .16);
+    border-radius: 14px;
+    background: var(--blanco);
+    color: var(--tinta);
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+    outline: none;
+
+    &:focus { border-color: var(--naranja); }
+  }
+
+  textarea { resize: vertical; min-height: 78px; }
+}
+
+/* ---- Panel de administracion --------------------------------------------
+   Estas clases las comparten las tres pestanas del admin. Viven aqui y no en
+   cada componente para no repetir el mismo bloque tres veces. */
+
+.admin-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.admin-cabecera__titulo {
+  margin: 0 auto 0 0;
+  font-family: Anton, sans-serif;
+  font-size: 22px;
+  text-transform: uppercase;
+}
+
+.admin-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+
+  input, select {
+    padding: 11px 15px;
+    border: 1px solid rgba(46, 46, 46, .16);
+    border-radius: 999px;
+    background: var(--blanco);
+    color: var(--tinta);
+    font-family: Inter, sans-serif;
+    font-size: 13px;
+    outline: none;
+
+    &:focus { border-color: var(--naranja); }
+  }
+
+  input { flex: 1 1 220px; min-width: 0; }
+}
+
+.admin-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-fila {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 1.5rem;
+  background: var(--arena-clara);
+}
+
+.admin-fila--apagada { opacity: .45; }
+
+.admin-fila__cuerpo { flex: 1; min-width: 0; }
+
+.admin-fila__nombre {
+  font-size: 14px;
+  font-weight: 700;
+  text-wrap: pretty;
+}
+
+.admin-fila__meta {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: .55;
+}
+
+.admin-fila__precio {
+  flex: none;
+  font-family: Anton, sans-serif;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.admin-fila__acciones { flex: none; display: flex; gap: 6px; }
+
+.admin-mini {
+  border: 0;
+  cursor: pointer;
+  padding: 12px 14px;
+  border-radius: 999px;
+  background: rgba(46, 46, 46, .08);
+  color: var(--tinta);
+  font-family: Inter, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  transition: background .25s var(--suave), color .25s var(--suave);
+
+  &:hover { background: var(--tinta); color: var(--arena-clara); }
+}
+
+.admin-mini--peligro:hover { background: #b3341c; color: var(--blanco); }
+.admin-mini--activo { background: var(--naranja); color: var(--blanco); }
+
+.admin-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 26px;
+  border-radius: var(--pastilla);
+  background: var(--blanco);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .12);
+  margin-bottom: 18px;
+}
+
+.admin-editor__titulo {
+  margin: 0;
+  font-family: Anton, sans-serif;
+  font-size: 19px;
+  text-transform: uppercase;
+}
+
+.admin-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 14px;
+}
+
+.admin-interruptores { display: flex; flex-wrap: wrap; gap: 18px; }
+
+.admin-interruptor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  cursor: pointer;
+
+  input { width: 17px; height: 17px; accent-color: var(--naranja); }
+}
+
+.admin-editor__pie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.admin-vacio {
+  padding: 30px;
+  border-radius: 1.5rem;
+  background: var(--arena-clara);
+  font-size: 13px;
+  line-height: 1.6;
+  opacity: .55;
+  text-align: center;
+}
+
+.admin-recuento {
+  margin: 16px 4px 0;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  opacity: .4;
+}
+
+@media (max-width: 620px) {
+  .admin-fila { flex-wrap: wrap; gap: 10px; }
+  .admin-fila__cuerpo { flex: 1 1 100%; }
+  .admin-fila__acciones { margin-left: auto; }
+}
+
+/* ---- Utilidad ------------------------------------------------------------ */
+
+.oculto-visual {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

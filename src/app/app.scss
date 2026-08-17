@@ -1,0 +1,98 @@
+/* Armazon: cabecera fija arriba, barra flotante abajo y el hueco del medio
+   para la pagina de turno. */
+
+.cabecera {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px clamp(16px, 3vw, 34px);
+  pointer-events: none; // el fondo deja pasar el scroll; los hijos lo recuperan
+
+  > * { pointer-events: auto; }
+}
+
+.marca {
+  font-family: Anton, sans-serif;
+  font-size: 15px;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: var(--tinta);
+}
+
+.cabecera__acciones {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  .boton {
+    height: 38px;
+    padding: 0 16px;
+  }
+
+  .boton--claro { box-shadow: 0 10px 30px rgba(0, 0, 0, .18); }
+}
+
+main { display: block; }
+
+.main--admin { min-height: 100svh; }
+
+.barra {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  gap: 2px;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .16);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, .28);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .18);
+}
+
+.barra__enlace {
+  flex: 0 1 auto;
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: var(--tinta);
+  white-space: nowrap;
+  transition: background .3s var(--suave), color .3s var(--suave);
+
+  &:hover { background: rgba(255, 255, 255, .55); }
+}
+
+.barra__enlace--activo {
+  background: var(--tinta);
+  color: var(--arena-clara);
+
+  &:hover { background: var(--tinta); }
+}
+
+/* En movil la barra lleva cinco destinos y no cabe con el espaciado de
+   escritorio: se aprieta el texto en vez de partir la barra en dos filas. */
+@media (max-width: 520px) {
+  .barra { gap: 0; padding: 5px; }
+
+  /* Se aprieta el texto en horizontal, pero no en vertical: con 9 px arriba y
+     abajo el enlace se quedaba en 29 px de alto y era dificil de acertar con
+     el pulgar. */
+  .barra__enlace {
+    padding: 13px 9px;
+    font-size: 9px;
+    letter-spacing: .1em;
+  }
+
+  .cabecera { padding: 12px 12px; }
+  .cabecera__acciones .boton { height: 34px; padding: 0 13px; font-size: 9px; }
+  .marca { font-size: 13px; }
+}
